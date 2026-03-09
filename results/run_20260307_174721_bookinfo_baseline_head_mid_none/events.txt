@@ -1,0 +1,175 @@
+NAMESPACE       LAST SEEN   TYPE      REASON              OBJECT                                                            MESSAGE
+istio-system    59m         Normal    NoPods              poddisruptionbudget/istiod                                        No matching pods found
+istio-system    59m         Normal    ScalingReplicaSet   deployment/istiod                                                 Scaled up replica set istiod-d7f48647c from 0 to 1
+istio-system    59m         Normal    Scheduled           pod/istiod-d7f48647c-kk7cj                                        Successfully assigned istio-system/istiod-d7f48647c-kk7cj to minikube
+istio-system    59m         Normal    SuccessfulCreate    replicaset/istiod-d7f48647c                                       Created pod: istiod-d7f48647c-kk7cj
+istio-system    59m         Warning   FailedCreate        replicaset/istiod-d7f48647c                                       Error creating: pods "istiod-d7f48647c-" is forbidden: error looking up service account istio-system/istiod: serviceaccount "istiod" not found
+istio-system    59m         Normal    Pulling             pod/istiod-d7f48647c-kk7cj                                        Pulling image "docker.io/istio/pilot:1.27.0"
+istio-system    59m         Normal    Started             pod/istiod-d7f48647c-kk7cj                                        Container started
+istio-system    59m         Normal    Created             pod/istiod-d7f48647c-kk7cj                                        Container created
+istio-system    59m         Normal    Pulled              pod/istiod-d7f48647c-kk7cj                                        Successfully pulled image "docker.io/istio/pilot:1.27.0" in 5.995s (5.995s including waiting). Image size: 252256926 bytes.
+istio-system    59m         Warning   Unhealthy           pod/istiod-d7f48647c-kk7cj                                        Readiness probe failed: HTTP probe failed with statuscode: 503
+istio-system    59m         Normal    NoPods              poddisruptionbudget/istio-egressgateway                           No matching pods found
+istio-system    59m         Normal    NoPods              poddisruptionbudget/istio-ingressgateway                          No matching pods found
+istio-system    59m         Warning   FailedCreate        replicaset/istio-egressgateway-c5fd4f5b5                          Error creating: pods "istio-egressgateway-c5fd4f5b5-" is forbidden: error looking up service account istio-system/istio-egressgateway-service-account: serviceaccount "istio-egressgateway-service-account" not found
+istio-system    59m         Normal    Pulling             pod/istio-ingressgateway-c966979f-fsxsk                           Pulling image "docker.io/istio/proxyv2:1.27.0"
+istio-system    59m         Normal    Scheduled           pod/istio-ingressgateway-c966979f-fsxsk                           Successfully assigned istio-system/istio-ingressgateway-c966979f-fsxsk to minikube
+istio-system    59m         Normal    SuccessfulCreate    replicaset/istio-ingressgateway-c966979f                          Created pod: istio-ingressgateway-c966979f-fsxsk
+istio-system    59m         Normal    ScalingReplicaSet   deployment/istio-ingressgateway                                   Scaled up replica set istio-ingressgateway-c966979f from 0 to 1
+istio-system    59m         Normal    Scheduled           pod/istio-egressgateway-c5fd4f5b5-hn7bw                           Successfully assigned istio-system/istio-egressgateway-c5fd4f5b5-hn7bw to minikube
+istio-system    59m         Normal    Pulling             pod/istio-egressgateway-c5fd4f5b5-hn7bw                           Pulling image "docker.io/istio/proxyv2:1.27.0"
+istio-system    59m         Warning   FailedCreate        replicaset/istio-ingressgateway-c966979f                          Error creating: pods "istio-ingressgateway-c966979f-" is forbidden: error looking up service account istio-system/istio-ingressgateway-service-account: serviceaccount "istio-ingressgateway-service-account" not found
+istio-system    59m         Normal    SuccessfulCreate    replicaset/istio-egressgateway-c5fd4f5b5                          Created pod: istio-egressgateway-c5fd4f5b5-hn7bw
+istio-system    59m         Normal    ScalingReplicaSet   deployment/istio-egressgateway                                    Scaled up replica set istio-egressgateway-c5fd4f5b5 from 0 to 1
+istio-system    58m         Normal    Pulled              pod/istio-egressgateway-c5fd4f5b5-hn7bw                           Successfully pulled image "docker.io/istio/proxyv2:1.27.0" in 4.206s (4.206s including waiting). Image size: 316084099 bytes.
+istio-system    58m         Normal    Created             pod/istio-egressgateway-c5fd4f5b5-hn7bw                           Container created
+istio-system    58m         Normal    Started             pod/istio-egressgateway-c5fd4f5b5-hn7bw                           Container started
+istio-system    58m         Normal    Created             pod/istio-ingressgateway-c966979f-fsxsk                           Container created
+istio-system    58m         Normal    Pulled              pod/istio-ingressgateway-c966979f-fsxsk                           Successfully pulled image "docker.io/istio/proxyv2:1.27.0" in 804ms (4.882s including waiting). Image size: 316084099 bytes.
+istio-system    58m         Normal    Started             pod/istio-ingressgateway-c966979f-fsxsk                           Container started
+mesh-app        54m         Normal    ScalingReplicaSet   deployment/productpage                                            Scaled up replica set productpage-5c9b6ddf7 from 0 to 1
+mesh-app        54m         Normal    SuccessfulCreate    replicaset/productpage-5c9b6ddf7                                  Created pod: productpage-5c9b6ddf7-hr682
+mesh-app        54m         Normal    Scheduled           pod/productpage-5c9b6ddf7-hr682                                   Successfully assigned mesh-app/productpage-5c9b6ddf7-hr682 to minikube
+mesh-app        54m         Normal    Pulled              pod/productpage-5c9b6ddf7-hr682                                   Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        54m         Normal    Started             pod/productpage-5c9b6ddf7-hr682                                   Container started
+mesh-app        54m         Normal    Created             pod/productpage-5c9b6ddf7-hr682                                   Container created
+mesh-app        54m         Normal    Pulled              pod/productpage-5c9b6ddf7-hr682                                   Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        54m         Normal    Started             pod/productpage-5c9b6ddf7-hr682                                   Container started
+mesh-app        54m         Normal    Created             pod/productpage-5c9b6ddf7-hr682                                   Container created
+mesh-app        54m         Normal    Pulling             pod/productpage-5c9b6ddf7-hr682                                   Pulling image "docker.io/istio/examples-bookinfo-productpage-v1:1.20.3"
+mesh-app        54m         Normal    Started             pod/productpage-5c9b6ddf7-hr682                                   Container started
+mesh-app        54m         Normal    Pulled              pod/productpage-5c9b6ddf7-hr682                                   Successfully pulled image "docker.io/istio/examples-bookinfo-productpage-v1:1.20.3" in 11.293s (11.293s including waiting). Image size: 212928618 bytes.
+mesh-app        54m         Normal    Created             pod/productpage-5c9b6ddf7-hr682                                   Container created
+observability   32m         Normal    SuccessfulCreate    replicaset/otel-collector-58c65f774c                              Created pod: otel-collector-58c65f774c-9nmhk
+observability   32m         Normal    ScalingReplicaSet   deployment/jaeger                                                 Scaled up replica set jaeger-7dc86c798f from 0 to 1
+observability   32m         Normal    SuccessfulCreate    replicaset/jaeger-7dc86c798f                                      Created pod: jaeger-7dc86c798f-94vwf
+observability   32m         Normal    Scheduled           pod/otel-collector-58c65f774c-9nmhk                               Successfully assigned observability/otel-collector-58c65f774c-9nmhk to minikube
+observability   32m         Normal    ScalingReplicaSet   deployment/otel-collector                                         Scaled up replica set otel-collector-58c65f774c from 0 to 1
+observability   32m         Normal    Scheduled           pod/jaeger-7dc86c798f-94vwf                                       Successfully assigned observability/jaeger-7dc86c798f-94vwf to minikube
+observability   32m         Normal    Pulling             pod/otel-collector-58c65f774c-9nmhk                               Pulling image "otel/opentelemetry-collector-contrib:0.95.0"
+observability   32m         Normal    Pulling             pod/jaeger-7dc86c798f-94vwf                                       Pulling image "jaegertracing/all-in-one:1.57"
+observability   32m         Normal    Pulled              pod/jaeger-7dc86c798f-94vwf                                       Successfully pulled image "jaegertracing/all-in-one:1.57" in 3.801s (3.802s including waiting). Image size: 72763568 bytes.
+observability   32m         Normal    Created             pod/jaeger-7dc86c798f-94vwf                                       Container created
+observability   32m         Normal    Started             pod/jaeger-7dc86c798f-94vwf                                       Container started
+observability   31m         Normal    Scheduled           pod/obs-kube-prometheus-stack-admission-create-fxplw              Successfully assigned observability/obs-kube-prometheus-stack-admission-create-fxplw to minikube
+observability   31m         Normal    Pulling             pod/obs-kube-prometheus-stack-admission-create-fxplw              Pulling image "ghcr.io/jkroepke/kube-webhook-certgen:1.7.8"
+observability   31m         Normal    SuccessfulCreate    job/obs-kube-prometheus-stack-admission-create                    Created pod: obs-kube-prometheus-stack-admission-create-fxplw
+observability   31m         Normal    Pulled              pod/otel-collector-58c65f774c-9nmhk                               Successfully pulled image "otel/opentelemetry-collector-contrib:0.95.0" in 4.813s (8.485s including waiting). Image size: 233851810 bytes.
+observability   31m         Normal    Created             pod/otel-collector-58c65f774c-9nmhk                               Container created
+observability   31m         Normal    Started             pod/otel-collector-58c65f774c-9nmhk                               Container started
+observability   31m         Normal    Pulled              pod/obs-kube-prometheus-stack-admission-create-fxplw              Successfully pulled image "ghcr.io/jkroepke/kube-webhook-certgen:1.7.8" in 1.465s (4.679s including waiting). Image size: 24707256 bytes.
+observability   31m         Normal    Created             pod/obs-kube-prometheus-stack-admission-create-fxplw              Container created
+observability   31m         Normal    Started             pod/obs-kube-prometheus-stack-admission-create-fxplw              Container started
+observability   31m         Normal    ScalingReplicaSet   deployment/obs-kube-state-metrics                                 Scaled up replica set obs-kube-state-metrics-5f4cc9b856 from 0 to 1
+observability   31m         Normal    ScalingReplicaSet   deployment/obs-grafana                                            Scaled up replica set obs-grafana-b884768db from 0 to 1
+observability   31m         Normal    SuccessfulCreate    daemonset/obs-prometheus-node-exporter                            Created pod: obs-prometheus-node-exporter-xl4d6
+observability   31m         Normal    Pulling             pod/obs-grafana-b884768db-pgqmm                                   Pulling image "quay.io/kiwigrid/k8s-sidecar:2.5.0"
+observability   31m         Normal    Scheduled           pod/obs-grafana-b884768db-pgqmm                                   Successfully assigned observability/obs-grafana-b884768db-pgqmm to minikube
+observability   31m         Normal    SuccessfulCreate    replicaset/obs-grafana-b884768db                                  Created pod: obs-grafana-b884768db-pgqmm
+observability   31m         Normal    Pulling             pod/obs-prometheus-node-exporter-xl4d6                            Pulling image "quay.io/prometheus/node-exporter:v1.10.2"
+observability   31m         Normal    Scheduled           pod/obs-prometheus-node-exporter-xl4d6                            Successfully assigned observability/obs-prometheus-node-exporter-xl4d6 to minikube
+observability   31m         Normal    SuccessfulCreate    replicaset/obs-kube-state-metrics-5f4cc9b856                      Created pod: obs-kube-state-metrics-5f4cc9b856-qkxb8
+observability   31m         Normal    Completed           job/obs-kube-prometheus-stack-admission-create                    Job completed
+observability   31m         Normal    Scheduled           pod/obs-kube-prometheus-stack-operator-564779d846-c9tbp           Successfully assigned observability/obs-kube-prometheus-stack-operator-564779d846-c9tbp to minikube
+observability   31m         Normal    Pulling             pod/obs-kube-prometheus-stack-operator-564779d846-c9tbp           Pulling image "quay.io/prometheus-operator/prometheus-operator:v0.89.0"
+observability   31m         Normal    Pulling             pod/obs-kube-state-metrics-5f4cc9b856-qkxb8                       Pulling image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0"
+observability   31m         Normal    Scheduled           pod/obs-kube-state-metrics-5f4cc9b856-qkxb8                       Successfully assigned observability/obs-kube-state-metrics-5f4cc9b856-qkxb8 to minikube
+observability   31m         Normal    ScalingReplicaSet   deployment/obs-kube-prometheus-stack-operator                     Scaled up replica set obs-kube-prometheus-stack-operator-564779d846 from 0 to 1
+observability   31m         Normal    SuccessfulCreate    replicaset/obs-kube-prometheus-stack-operator-564779d846          Created pod: obs-kube-prometheus-stack-operator-564779d846-c9tbp
+observability   31m         Normal    Created             pod/obs-kube-prometheus-stack-admission-patch-j9w47               Container created
+observability   31m         Normal    Scheduled           pod/obs-kube-prometheus-stack-admission-patch-j9w47               Successfully assigned observability/obs-kube-prometheus-stack-admission-patch-j9w47 to minikube
+observability   31m         Normal    Pulled              pod/obs-kube-prometheus-stack-admission-patch-j9w47               Container image "ghcr.io/jkroepke/kube-webhook-certgen:1.7.8" already present on machine and can be accessed by the pod
+observability   31m         Normal    SuccessfulCreate    job/obs-kube-prometheus-stack-admission-patch                     Created pod: obs-kube-prometheus-stack-admission-patch-j9w47
+observability   31m         Normal    Started             pod/obs-kube-prometheus-stack-admission-patch-j9w47               Container started
+observability   31m         Normal    Started             pod/obs-prometheus-node-exporter-xl4d6                            Container started
+observability   31m         Normal    Pulled              pod/obs-prometheus-node-exporter-xl4d6                            Successfully pulled image "quay.io/prometheus/node-exporter:v1.10.2" in 2.819s (2.819s including waiting). Image size: 24476137 bytes.
+observability   31m         Normal    Created             pod/obs-prometheus-node-exporter-xl4d6                            Container created
+observability   31m         Normal    Completed           job/obs-kube-prometheus-stack-admission-patch                     Job completed
+observability   31m         Normal    Pulled              pod/obs-kube-state-metrics-5f4cc9b856-qkxb8                       Successfully pulled image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0" in 2.826s (5.584s including waiting). Image size: 60605075 bytes.
+observability   31m         Normal    Created             pod/obs-kube-state-metrics-5f4cc9b856-qkxb8                       Container created
+observability   31m         Normal    Started             pod/obs-kube-state-metrics-5f4cc9b856-qkxb8                       Container started
+observability   31m         Normal    Pulling             pod/obs-grafana-b884768db-pgqmm                                   Pulling image "docker.io/grafana/grafana:12.4.0"
+observability   31m         Normal    Pulled              pod/obs-grafana-b884768db-pgqmm                                   Successfully pulled image "quay.io/kiwigrid/k8s-sidecar:2.5.0" in 4.166s (9.719s including waiting). Image size: 84687867 bytes.
+observability   31m         Normal    Created             pod/obs-grafana-b884768db-pgqmm                                   Container created
+observability   31m         Normal    Started             pod/obs-grafana-b884768db-pgqmm                                   Container started
+observability   31m         Normal    Pulled              pod/obs-grafana-b884768db-pgqmm                                   Container image "quay.io/kiwigrid/k8s-sidecar:2.5.0" already present on machine and can be accessed by the pod
+observability   31m         Normal    Created             pod/obs-grafana-b884768db-pgqmm                                   Container created
+observability   31m         Normal    Started             pod/obs-grafana-b884768db-pgqmm                                   Container started
+observability   31m         Normal    Pulled              pod/obs-kube-prometheus-stack-operator-564779d846-c9tbp           Successfully pulled image "quay.io/prometheus-operator/prometheus-operator:v0.89.0" in 3.046s (12.751s including waiting). Image size: 68140441 bytes.
+observability   31m         Normal    Created             pod/obs-kube-prometheus-stack-operator-564779d846-c9tbp           Container created
+observability   31m         Normal    Started             pod/obs-kube-prometheus-stack-operator-564779d846-c9tbp           Container started
+observability   31m         Normal    Pulling             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Pulling image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0"
+observability   31m         Normal    SuccessfulCreate    statefulset/prometheus-obs-kube-prometheus-stack-prometheus       Create Pod prometheus-obs-kube-prometheus-stack-prometheus-0 in StatefulSet prometheus-obs-kube-prometheus-stack-prometheus successful
+observability   31m         Normal    Scheduled           pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Successfully assigned observability/prometheus-obs-kube-prometheus-stack-prometheus-0 to minikube
+observability   31m         Normal    Pulling             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Pulling image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0"
+observability   31m         Normal    SuccessfulCreate    statefulset/alertmanager-obs-kube-prometheus-stack-alertmanager   Create Pod alertmanager-obs-kube-prometheus-stack-alertmanager-0 in StatefulSet alertmanager-obs-kube-prometheus-stack-alertmanager successful
+observability   31m         Normal    Scheduled           pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Successfully assigned observability/alertmanager-obs-kube-prometheus-stack-alertmanager-0 to minikube
+observability   31m         Normal    Pulled              pod/obs-grafana-b884768db-pgqmm                                   Successfully pulled image "docker.io/grafana/grafana:12.4.0" in 19.371s (22.173s including waiting). Image size: 714446608 bytes.
+observability   31m         Normal    Created             pod/obs-grafana-b884768db-pgqmm                                   Container created
+observability   31m         Normal    Started             pod/obs-grafana-b884768db-pgqmm                                   Container started
+observability   31m         Warning   Unhealthy           pod/obs-grafana-b884768db-pgqmm                                   Readiness probe failed: Get "http://10.244.0.11:3000/api/health": dial tcp 10.244.0.11:3000: connect: connection refused
+observability   31m         Normal    Created             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container created
+observability   31m         Normal    Pulling             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Pulling image "quay.io/prometheus/alertmanager:v0.31.1"
+observability   31m         Normal    Pulled              pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Successfully pulled image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0" in 3.089s (21.473s including waiting). Image size: 43171225 bytes.
+observability   31m         Normal    Started             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container started
+observability   31m         Normal    Created             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container created
+observability   31m         Normal    Started             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container started
+observability   31m         Normal    Pulling             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Pulling image "quay.io/prometheus/prometheus:v3.10.0"
+observability   31m         Normal    Pulled              pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Successfully pulled image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0" in 944ms (22.224s including waiting). Image size: 43171225 bytes.
+observability   31m         Normal    Pulled              pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Successfully pulled image "quay.io/prometheus/alertmanager:v0.31.1" in 4.176s (4.717s including waiting). Image size: 74339813 bytes.
+observability   31m         Normal    Created             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container created
+observability   31m         Normal    Pulled              pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0" already present on machine and can be accessed by the pod
+observability   31m         Normal    Started             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container started
+observability   31m         Normal    Started             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container started
+observability   31m         Normal    Created             pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0         Container created
+observability   31m         Normal    Created             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container created
+observability   31m         Normal    Pulled              pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Successfully pulled image "quay.io/prometheus/prometheus:v3.10.0" in 8.289s (11.981s including waiting). Image size: 359160546 bytes.
+observability   31m         Normal    Started             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container started
+observability   31m         Normal    Started             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container started
+observability   31m         Normal    Pulled              pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container image "quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0" already present on machine and can be accessed by the pod
+observability   31m         Normal    Created             pod/prometheus-obs-kube-prometheus-stack-prometheus-0             Container created
+observability   27m         Normal    ScalingReplicaSet   deployment/otel-collector                                         Scaled up replica set otel-collector-6cbc68cf7f from 0 to 1
+observability   27m         Normal    Scheduled           pod/otel-collector-6cbc68cf7f-lbkt6                               Successfully assigned observability/otel-collector-6cbc68cf7f-lbkt6 to minikube
+observability   27m         Normal    Created             pod/otel-collector-6cbc68cf7f-lbkt6                               Container created
+observability   27m         Normal    Pulled              pod/otel-collector-6cbc68cf7f-lbkt6                               Container image "otel/opentelemetry-collector-contrib:0.95.0" already present on machine and can be accessed by the pod
+observability   27m         Normal    SuccessfulCreate    replicaset/otel-collector-6cbc68cf7f                              Created pod: otel-collector-6cbc68cf7f-lbkt6
+observability   27m         Normal    Started             pod/otel-collector-6cbc68cf7f-lbkt6                               Container started
+observability   27m         Normal    ScalingReplicaSet   deployment/otel-collector                                         Scaled down replica set otel-collector-58c65f774c from 1 to 0
+observability   27m         Normal    SuccessfulDelete    replicaset/otel-collector-58c65f774c                              Deleted pod: otel-collector-58c65f774c-9nmhk
+observability   27m         Normal    Killing             pod/otel-collector-58c65f774c-9nmhk                               Stopping container otel-collector
+mesh-app        27m         Normal    Started             pod/loadgen-exp-172006-j6dmf                                      Container started
+mesh-app        27m         Normal    Created             pod/loadgen-exp-172006-j6dmf                                      Container created
+mesh-app        27m         Normal    Pulled              pod/loadgen-exp-172006-j6dmf                                      Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        27m         Normal    SuccessfulCreate    job/loadgen-exp-172006                                            Created pod: loadgen-exp-172006-j6dmf
+mesh-app        27m         Normal    Scheduled           pod/loadgen-exp-172006-j6dmf                                      Successfully assigned mesh-app/loadgen-exp-172006-j6dmf to minikube
+mesh-app        27m         Normal    Pulled              pod/loadgen-exp-172006-j6dmf                                      Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        27m         Normal    Created             pod/loadgen-exp-172006-j6dmf                                      Container created
+mesh-app        27m         Normal    Started             pod/loadgen-exp-172006-j6dmf                                      Container started
+mesh-app        27m         Normal    Pulling             pod/loadgen-exp-172006-j6dmf                                      Pulling image "fortio/fortio:1.63.0"
+mesh-app        27m         Normal    Started             pod/loadgen-exp-172006-j6dmf                                      Container started
+mesh-app        27m         Normal    Created             pod/loadgen-exp-172006-j6dmf                                      Container created
+mesh-app        27m         Normal    Pulled              pod/loadgen-exp-172006-j6dmf                                      Successfully pulled image "fortio/fortio:1.63.0" in 3.845s (3.845s including waiting). Image size: 12600081 bytes.
+mesh-app        21m         Normal    Killing             pod/loadgen-exp-172006-j6dmf                                      Stopping container istio-proxy
+mesh-app        21m         Normal    Completed           job/loadgen-exp-172006                                            Job completed
+observability   4m14s       Normal    SuccessfulCreate    replicaset/otel-collector-59bbdd464b                              Created pod: otel-collector-59bbdd464b-jr787
+observability   4m14s       Normal    Scheduled           pod/otel-collector-59bbdd464b-jr787                               Successfully assigned observability/otel-collector-59bbdd464b-jr787 to minikube
+observability   4m14s       Normal    ScalingReplicaSet   deployment/otel-collector                                         Scaled up replica set otel-collector-59bbdd464b from 0 to 1
+observability   4m13s       Normal    Started             pod/otel-collector-59bbdd464b-jr787                               Container started
+observability   4m13s       Normal    Created             pod/otel-collector-59bbdd464b-jr787                               Container created
+observability   4m13s       Normal    Pulled              pod/otel-collector-59bbdd464b-jr787                               Container image "otel/opentelemetry-collector-contrib:0.95.0" already present on machine and can be accessed by the pod
+observability   4m12s       Normal    Killing             pod/otel-collector-6cbc68cf7f-lbkt6                               Stopping container otel-collector
+observability   4m12s       Normal    ScalingReplicaSet   deployment/otel-collector                                         Scaled down replica set otel-collector-6cbc68cf7f from 1 to 0
+observability   4m12s       Normal    SuccessfulDelete    replicaset/otel-collector-6cbc68cf7f                              Deleted pod: otel-collector-6cbc68cf7f-lbkt6
+mesh-app        4m9s        Normal    SuccessfulCreate    job/loadgen-exp-174312                                            Created pod: loadgen-exp-174312-vt97v
+mesh-app        4m9s        Normal    Scheduled           pod/loadgen-exp-174312-vt97v                                      Successfully assigned mesh-app/loadgen-exp-174312-vt97v to minikube
+mesh-app        4m8s        Normal    Pulled              pod/loadgen-exp-174312-vt97v                                      Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        4m8s        Normal    Created             pod/loadgen-exp-174312-vt97v                                      Container created
+mesh-app        4m8s        Normal    Started             pod/loadgen-exp-174312-vt97v                                      Container started
+mesh-app        4m7s        Normal    Pulled              pod/loadgen-exp-174312-vt97v                                      Container image "docker.io/istio/proxyv2:1.27.0" already present on machine and can be accessed by the pod
+mesh-app        4m7s        Normal    Started             pod/loadgen-exp-174312-vt97v                                      Container started
+mesh-app        4m7s        Normal    Created             pod/loadgen-exp-174312-vt97v                                      Container created
+mesh-app        4m5s        Normal    Pulled              pod/loadgen-exp-174312-vt97v                                      Container image "fortio/fortio:1.63.0" already present on machine and can be accessed by the pod
+mesh-app        4m5s        Normal    Created             pod/loadgen-exp-174312-vt97v                                      Container created
+mesh-app        4m5s        Normal    Started             pod/loadgen-exp-174312-vt97v                                      Container started
+mesh-app        4s          Normal    Killing             pod/loadgen-exp-174312-vt97v                                      Stopping container istio-proxy
+mesh-app        0s          Normal    Completed           job/loadgen-exp-174312                                            Job completed

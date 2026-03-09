@@ -1,0 +1,10 @@
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/productpage   1/1     1            1           54m
+
+NAME                  TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/productpage   ClusterIP   10.98.135.106   <none>        9080/TCP   54m
+
+NAME                              READY   STATUS      RESTARTS   AGE
+pod/loadgen-exp-172006-j6dmf      0/2     Completed   0          27m
+pod/loadgen-exp-174312-vt97v      0/2     Completed   0          4m9s
+pod/productpage-5c9b6ddf7-hr682   2/2     Running     0          54m

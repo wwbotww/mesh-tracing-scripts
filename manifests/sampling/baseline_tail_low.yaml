@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  labels:
+    sampling.policy: baseline_tail
+    sampling.budget: low
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 10000
+        expected_new_traces_per_sec: 50
+        policies:
+          - name: error-traces
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: high-latency
+            type: latency
+            latency:
+              threshold_ms: 500
+          - name: fallback-probability
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 1
+      batch:
+        timeout: 1s
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger-collector.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling, batch]
+          exporters: [otlp/jaeger]

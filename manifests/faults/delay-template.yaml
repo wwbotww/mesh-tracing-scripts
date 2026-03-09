@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: __FAULT_NAME__
+  labels:
+    app.kubernetes.io/managed-by: trace-exp
+    fault.type: delay
+spec:
+  hosts:
+  - __TARGET_SERVICE__
+  http:
+  - match:
+    - sourceLabels:
+        app: "__SOURCE_SERVICE__"
+    fault:
+      delay:
+        fixedDelay: "__FIXED_DELAY_MS__ms"
+        percentage:
+          value: __PERCENTAGE__
+    route:
+    - destination:
+        host: __TARGET_SERVICE__
+  - route:
+    - destination:
+        host: __TARGET_SERVICE__

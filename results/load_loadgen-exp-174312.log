@@ -1,0 +1,60 @@
+{"ts":1772905396.423299,"level":"info","r":1,"file":"scli.go","line":124,"msg":"Starting","command":"Φορτίο","version":"1.63.0 h1:fLmroswjKXbqFSsdJin2gAXabgLiNybDA3NTB/RjhpU= go1.21.5 arm64 linux","go-max-procs":4}
+Fortio 1.63.0 running at 50 queries per second, 4->4 procs, for 4m0s: http://productpage.mesh-app.svc.cluster.local:9080/productpage
+{"ts":1772905396.423829,"level":"info","r":1,"file":"httprunner.go","line":121,"msg":"Starting http test","run":0,"url":"http://productpage.mesh-app.svc.cluster.local:9080/productpage","threads":4,"qps":"50.0","warmup":"parallel","conn-reuse":""}
+Starting at 50 qps with 4 thread(s) [gomax 4] for 4m0s : 3000 calls each (total 12000)
+{"ts":1772905636.507146,"level":"info","r":35,"file":"periodic.go","line":850,"msg":"T000 ended after 4m0.011970791s : 3000 calls. qps=12.499376552398587"}
+{"ts":1772905636.507433,"level":"info","r":38,"file":"periodic.go","line":850,"msg":"T003 ended after 4m0.012389623s : 3000 calls. qps=12.499354740445929"}
+{"ts":1772905636.507481,"level":"info","r":37,"file":"periodic.go","line":850,"msg":"T002 ended after 4m0.012416456s : 3000 calls. qps=12.499353343038281"}
+{"ts":1772905636.508687,"level":"info","r":36,"file":"periodic.go","line":850,"msg":"T001 ended after 4m0.013633704s : 3000 calls. qps=12.49928995158579"}
+Ended after 4m0.013728745s : 12000 calls. qps=49.997
+{"ts":1772905636.509036,"level":"info","r":1,"file":"periodic.go","line":581,"msg":"Run ended","run":0,"elapsed":240013728745,"calls":12000,"qps":49.997140008392066}
+Sleep times : count 11996 avg 0.065496492 +/- 0.004046 min -0.067750579 max 0.070171176 sum 785.695915
+Aggregated Function Time : count 12000 avg 0.013806877 +/- 0.003754 min 0.009707193 max 0.144989557 sum 165.682529
+# range, mid point, percentile, count
+>= 0.00970719 <= 0.01 , 0.0098536 , 0.02, 2
+> 0.01 <= 0.011 , 0.0105 , 1.62, 193
+> 0.011 <= 0.012 , 0.0115 , 15.56, 1672
+> 0.012 <= 0.014 , 0.013 , 68.49, 6352
+> 0.014 <= 0.016 , 0.015 , 89.58, 2531
+> 0.016 <= 0.018 , 0.017 , 95.97, 767
+> 0.018 <= 0.02 , 0.019 , 97.85, 225
+> 0.02 <= 0.025 , 0.0225 , 99.33, 178
+> 0.025 <= 0.03 , 0.0275 , 99.67, 41
+> 0.03 <= 0.035 , 0.0325 , 99.80, 15
+> 0.035 <= 0.04 , 0.0375 , 99.81, 1
+> 0.045 <= 0.05 , 0.0475 , 99.82, 1
+> 0.05 <= 0.06 , 0.055 , 99.85, 4
+> 0.06 <= 0.07 , 0.065 , 99.86, 1
+> 0.07 <= 0.08 , 0.075 , 99.95, 11
+> 0.08 <= 0.09 , 0.085 , 99.97, 2
+> 0.09 <= 0.1 , 0.095 , 99.97, 1
+> 0.1 <= 0.12 , 0.11 , 99.98, 1
+> 0.14 <= 0.14499 , 0.142495 , 100.00, 2
+# target 50% 0.0133013
+# target 75% 0.0146171
+# target 90% 0.0161304
+# target 99% 0.0238764
+# target 99.9% 0.0745455
+Error cases : no data
+# Socket and IP used for each connection:
+[0]   1 socket used, resolved to 10.98.135.106:9080, connection timing : count 1 avg 0.001440207 +/- 0 min 0.001440207 max 0.001440207 sum 0.001440207
+[1]   1 socket used, resolved to 10.98.135.106:9080, connection timing : count 1 avg 0.000868874 +/- 0 min 0.000868874 max 0.000868874 sum 0.000868874
+[2]   1 socket used, resolved to 10.98.135.106:9080, connection timing : count 1 avg 0.000887791 +/- 0 min 0.000887791 max 0.000887791 sum 0.000887791
+[3]   1 socket used, resolved to 10.98.135.106:9080, connection timing : count 1 avg 0.000234416 +/- 0 min 0.000234416 max 0.000234416 sum 0.000234416
+Connection time histogram (s) : count 4 avg 0.000857822 +/- 0.0004269 min 0.000234416 max 0.001440207 sum 0.003431288
+# range, mid point, percentile, count
+>= 0.000234416 <= 0.001 , 0.000617208 , 75.00, 3
+> 0.001 <= 0.00144021 , 0.0012201 , 100.00, 1
+# target 50% 0.000617208
+# target 75% 0.001
+# target 90% 0.00126412
+# target 99% 0.0014226
+# target 99.9% 0.00143845
+Sockets used: 4 (for perfect keepalive, would be 4)
+Uniform: false, Jitter: false, Catchup allowed: true
+IP addresses distribution:
+10.98.135.106:9080: 4
+Code 200 : 12000 (100.0 %)
+Response Header Sizes : count 12000 avg 181.99875 +/- 0.03977 min 181 max 183 sum 2183985
+Response Body/Total Sizes : count 12000 avg 6348.9987 +/- 0.03977 min 6348 max 6350 sum 76187985
+All done 12000 calls (plus 4 warmup) 13.807 ms avg, 50.0 qps

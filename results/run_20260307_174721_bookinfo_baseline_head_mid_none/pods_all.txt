@@ -1,0 +1,22 @@
+NAMESPACE       NAME                                                    READY   STATUS      RESTARTS   AGE     IP             NODE       NOMINATED NODE   READINESS GATES
+istio-system    istio-egressgateway-c5fd4f5b5-hn7bw                     1/1     Running     0          59m     10.244.0.4     minikube   <none>           <none>
+istio-system    istio-ingressgateway-c966979f-fsxsk                     1/1     Running     0          59m     10.244.0.5     minikube   <none>           <none>
+istio-system    istiod-d7f48647c-kk7cj                                  1/1     Running     0          59m     10.244.0.3     minikube   <none>           <none>
+kube-system     coredns-7d764666f9-pxfsx                                1/1     Running     0          28h     10.244.0.2     minikube   <none>           <none>
+kube-system     etcd-minikube                                           1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+kube-system     kube-apiserver-minikube                                 1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+kube-system     kube-controller-manager-minikube                        1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+kube-system     kube-proxy-7gttw                                        1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+kube-system     kube-scheduler-minikube                                 1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+kube-system     storage-provisioner                                     1/1     Running     0          28h     192.168.49.2   minikube   <none>           <none>
+mesh-app        loadgen-exp-172006-j6dmf                                0/2     Completed   0          27m     10.244.0.17    minikube   <none>           <none>
+mesh-app        loadgen-exp-174312-vt97v                                0/2     Completed   0          4m9s    10.244.0.19    minikube   <none>           <none>
+mesh-app        productpage-5c9b6ddf7-hr682                             2/2     Running     0          54m     10.244.0.6     minikube   <none>           <none>
+observability   alertmanager-obs-kube-prometheus-stack-alertmanager-0   2/2     Running     0          31m     10.244.0.14    minikube   <none>           <none>
+observability   jaeger-7dc86c798f-94vwf                                 1/1     Running     0          32m     10.244.0.7     minikube   <none>           <none>
+observability   obs-grafana-b884768db-pgqmm                             3/3     Running     0          31m     10.244.0.11    minikube   <none>           <none>
+observability   obs-kube-prometheus-stack-operator-564779d846-c9tbp     1/1     Running     0          31m     10.244.0.12    minikube   <none>           <none>
+observability   obs-kube-state-metrics-5f4cc9b856-qkxb8                 1/1     Running     0          31m     10.244.0.10    minikube   <none>           <none>
+observability   obs-prometheus-node-exporter-xl4d6                      1/1     Running     0          31m     192.168.49.2   minikube   <none>           <none>
+observability   otel-collector-59bbdd464b-jr787                         1/1     Running     0          4m14s   10.244.0.18    minikube   <none>           <none>
+observability   prometheus-obs-kube-prometheus-stack-prometheus-0       2/2     Running     0          31m     10.244.0.15    minikube   <none>           <none>

@@ -1,0 +1,2 @@
+NAMESPACE   NAME              AGE
+mesh-app    tracing-default   31m

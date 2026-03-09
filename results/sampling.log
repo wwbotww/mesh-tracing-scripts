@@ -1,0 +1,571 @@
+==== 2026-02-23 03:08:42 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=63948
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 63948
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-02-23 03:11:08 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=64415
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 64415
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-02-23 03:21:07 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=66029
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 66029
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-02-23 03:37:29 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment spec update to be observed...
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=68867
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 68867
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-02-23 03:43:47 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_head, budget=low'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=low'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=low
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 1
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+      processors: [probabilistic_sampler, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=70076
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 70076
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-03-07 17:20:00 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=12314
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage.mesh-app
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=0
++ [[ 0 == \0 ]]
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=0
++ echo 'trace_count_last_15m(service=productpage, limit=200): 0'
+trace_count_last_15m(service=productpage, limit=200): 0
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 12314
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
+==== 2026-03-07 17:43:07 sampling switch ====
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_head, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 10
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+      processors: [probabilistic_sampler, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=15340
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ sleep 3
++ JAEGER_SERVICE_NAME=productpage.mesh-app
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=200
++ [[ 200 == \0 ]]
++ [[ 200 == \N\A ]]
++ echo 'trace_count_last_15m(service=productpage.mesh-app, limit=200): 200'
+trace_count_last_15m(service=productpage.mesh-app, limit=200): 200
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 15340
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log

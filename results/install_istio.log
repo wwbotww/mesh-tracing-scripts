@@ -1,0 +1,52 @@
+==== install_istio validation log ====
+timestamp: 2026-03-09 00:03:56
+profile: demo
+istio_namespace: istio-system
+inject_namespace: mesh-app
+
+deployment "istiod" successfully rolled out
+Info [IST0102] (Namespace default) The namespace is not enabled for Istio injection. Run 'kubectl label namespace default istio-injection=enabled' to enable it, or 'kubectl label namespace default istio-injection=disabled' to explicitly mark it as not needing injection.
+NAME                                   READY   STATUS    RESTARTS   AGE
+istio-egressgateway-f7fc5b56c-dfpdt    1/1     Running   0          11s
+istio-ingressgateway-8d7447659-x459t   1/1     Running   0          11s
+istiod-7c4fbc86db-wmv45                1/1     Running   0          27s
+apiVersion: v1
+data:
+  mesh: |-
+    accessLogFile: /dev/stdout
+    defaultConfig:
+      discoveryAddress: istiod.istio-system.svc:15012
+    defaultProviders:
+      tracing:
+      - otel-tracing
+    enablePrometheusMerge: true
+    enableTracing: true
+    extensionProviders:
+    - name: otel-tracing
+      opentelemetry:
+        port: 4317
+        service: otel-collector.observability.svc.cluster.local
+    rootNamespace: istio-system
+    trustDomain: cluster.local
+  meshNetworks: 'networks: {}'
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2026-03-09T00:03:29Z"
+  labels:
+    app.kubernetes.io/instance: istio
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: istiod
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: istiod-1.0.0
+    install.operator.istio.io/owning-resource: unknown
+    install.operator.istio.io/owning-resource-namespace: istio-system
+    istio.io/rev: default
+    operator.istio.io/component: Pilot
+    operator.istio.io/managed: Reconcile
+    operator.istio.io/version: 1.29.0
+    release: istio
+  name: istio
+  namespace: istio-system
+  resourceVersion: "14218"
+  uid: f767f102-e6ef-4352-9f0c-044b481bffc0

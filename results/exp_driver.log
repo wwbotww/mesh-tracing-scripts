@@ -1,0 +1,2605 @@
+==== 2026-02-23 02:35:29 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.27.0
+data plane version: 1.27.0 (8 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io    2026-02-11T11:20:31Z
+destinationrules.networking.istio.io       2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io           2026-02-11T11:20:31Z
+gateways.networking.istio.io               2026-02-11T11:20:31Z
+peerauthentications.security.istio.io      2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io           2026-02-11T11:20:31Z
+requestauthentications.security.istio.io   2026-02-11T11:20:31Z
+serviceentries.networking.istio.io         2026-02-11T11:20:31Z
+sidecars.networking.istio.io               2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io             2026-02-11T11:20:31Z
+virtualservices.networking.istio.io        2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io            2026-02-11T11:20:30Z
+workloadentries.networking.istio.io        2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io         2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ log 'App bookinfo not detected, deploying...'
++ echo '[INFO] App bookinfo not detected, deploying...'
+[INFO] App bookinfo not detected, deploying...
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/02_deploy_app.sh' --app bookinfo --namespace mesh-app
++ log 'Starting app deployment...'
++ echo '[INFO] Starting app deployment...'
+[INFO] Starting app deployment...
++ log 'app=bookinfo, namespace=mesh-app, istio_namespace=istio-system'
++ echo '[INFO] app=bookinfo, namespace=mesh-app, istio_namespace=istio-system'
+[INFO] app=bookinfo, namespace=mesh-app, istio_namespace=istio-system
++ log 'Ensuring target namespace exists...'
++ echo '[INFO] Ensuring target namespace exists...'
+[INFO] Ensuring target namespace exists...
++ kubectl get ns mesh-app
++ kubectl create ns mesh-app
+namespace/mesh-app created
++ log 'Enabling sidecar injection label on namespace=mesh-app...'
++ echo '[INFO] Enabling sidecar injection label on namespace=mesh-app...'
+[INFO] Enabling sidecar injection label on namespace=mesh-app...
++ kubectl label namespace mesh-app istio-injection=enabled --overwrite
+namespace/mesh-app labeled
++ [[ bookinfo == \b\o\o\k\i\n\f\o ]]
++ log 'Deploying Bookinfo application...'
++ echo '[INFO] Deploying Bookinfo application...'
+[INFO] Deploying Bookinfo application...
++ [[ -d /Users/young/Desktop/individual Proj/project-ysh/manifests/app/bookinfo ]]
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/app/bookinfo.yaml ]]
++ kubectl apply -n mesh-app -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/app/bookinfo.yaml'
+deployment.apps/productpage created
+service/productpage created
++ log 'Deploying Bookinfo ingress resources (Gateway + VirtualService)...'
++ echo '[INFO] Deploying Bookinfo ingress resources (Gateway + VirtualService)...'
+[INFO] Deploying Bookinfo ingress resources (Gateway + VirtualService)...
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/istio/bookinfo-gateway.yaml ]]
++ kubectl apply -n mesh-app -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/bookinfo/networking/bookinfo-gateway.yaml
+gateway.networking.istio.io/bookinfo-gateway created
+virtualservice.networking.istio.io/bookinfo created
++ log 'Validation: waiting for pods to become Ready...'
++ echo '[INFO] Validation: waiting for pods to become Ready...'
+[INFO] Validation: waiting for pods to become Ready...
++ kubectl wait --for=condition=Ready pods --all -n mesh-app --timeout=300s
+pod/productpage-5c9b6ddf7-qjnjq condition met
++ log 'Validation: all pods should be Running...'
++ echo '[INFO] Validation: all pods should be Running...'
+[INFO] Validation: all pods should be Running...
++ kubectl get pods -n mesh-app
++ awk 'NR==1{next} $3!="Running"{print "Non-running pod:", $1, "status:", $3; bad=1} END{exit bad+0}'
++ log 'Validation: istio-proxy container must exist in each pod...'
++ echo '[INFO] Validation: istio-proxy container must exist in each pod...'
+[INFO] Validation: istio-proxy container must exist in each pod...
+++ kubectl get pods -n mesh-app -o 'jsonpath={range .items[*]}{.metadata.name}{"\n"}{end}'
++ for pod in '$(kubectl get pods -n "${NAMESPACE}" -o jsonpath='\''{range .items[*]}{.metadata.name}{"\n"}{end}'\'')'
+++ kubectl get pod productpage-5c9b6ddf7-qjnjq -n mesh-app -o 'jsonpath={.spec.containers[*].name}'
++ containers=productpage
++ case " ${containers} " in
++ err 'Pod productpage-5c9b6ddf7-qjnjq has no istio-proxy container. Containers: productpage'
++ echo '[ERROR] Pod productpage-5c9b6ddf7-qjnjq has no istio-proxy container. Containers: productpage'
+[ERROR] Pod productpage-5c9b6ddf7-qjnjq has no istio-proxy container. Containers: productpage
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-02-23 02:36:07 experiment run ====
++ set -x
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.27.0
+data plane version: 1.27.0 (9 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io    2026-02-11T11:20:31Z
+destinationrules.networking.istio.io       2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io           2026-02-11T11:20:31Z
+gateways.networking.istio.io               2026-02-11T11:20:31Z
+peerauthentications.security.istio.io      2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io           2026-02-11T11:20:31Z
+requestauthentications.security.istio.io   2026-02-11T11:20:31Z
+serviceentries.networking.istio.io         2026-02-11T11:20:31Z
+sidecars.networking.istio.io               2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io             2026-02-11T11:20:31Z
+virtualservices.networking.istio.io        2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io            2026-02-11T11:20:30Z
+workloadentries.networking.istio.io        2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io         2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ log 'Observability stack not detected, installing...'
++ echo '[INFO] Observability stack not detected, installing...'
+[INFO] Observability stack not detected, installing...
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/03_install_observability.sh' --namespace observability --app-namespace mesh-app
++ log 'Ensuring namespace observability exists...'
++ echo '[INFO] Ensuring namespace observability exists...'
+[INFO] Ensuring namespace observability exists...
++ kubectl get ns observability
++ kubectl create ns observability
+namespace/observability created
++ kubectl get ns mesh-app
++ log 'Installing Jaeger (all-in-one, easiest path)...'
++ echo '[INFO] Installing Jaeger (all-in-one, easiest path)...'
+[INFO] Installing Jaeger (all-in-one, easiest path)...
++ kubectl apply -n observability -f -
+deployment.apps/jaeger created
+service/jaeger-query created
+service/jaeger-collector created
++ log 'Installing OpenTelemetry Collector (gateway mode: OTLP in, Jaeger+Prom metrics out)...'
++ echo '[INFO] Installing OpenTelemetry Collector (gateway mode: OTLP in, Jaeger+Prom metrics out)...'
+[INFO] Installing OpenTelemetry Collector (gateway mode: OTLP in, Jaeger+Prom metrics out)...
++ kubectl apply -n observability -f -
+configmap/otel-collector-config created
+deployment.apps/otel-collector created
+service/otel-collector created
++ log 'Installing kube-prometheus-stack via Helm...'
++ echo '[INFO] Installing kube-prometheus-stack via Helm...'
+[INFO] Installing kube-prometheus-stack via Helm...
++ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+"prometheus-community" has been added to your repositories
++ helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "prometheus-community" chart repository
+Update Complete. ⎈Happy Helming!⎈
++ helm upgrade --install obs prometheus-community/kube-prometheus-stack -n observability --create-namespace --set grafana.service.type=ClusterIP --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+Release "obs" does not exist. Installing it now.
+NAME: obs
+LAST DEPLOYED: Mon Feb 23 02:36:15 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace observability get pods -l "release=obs"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace observability get secrets obs-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace observability get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=obs" -oname)
+  kubectl --namespace observability port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace observability -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
++ log 'Installing PodMonitor for Istio sidecars and OTel Collector metrics...'
++ echo '[INFO] Installing PodMonitor for Istio sidecars and OTel Collector metrics...'
+[INFO] Installing PodMonitor for Istio sidecars and OTel Collector metrics...
++ kubectl apply -n mesh-app -f -
+podmonitor.monitoring.coreos.com/istio-envoy-stats created
++ kubectl apply -n observability -f -
+servicemonitor.monitoring.coreos.com/otel-collector-metrics created
++ log 'Validation: wait for core deployments'
++ echo '[INFO] Validation: wait for core deployments'
+[INFO] Validation: wait for core deployments
++ kubectl -n observability rollout status deployment/otel-collector --timeout=300s
+deployment "otel-collector" successfully rolled out
++ kubectl -n observability rollout status deployment/jaeger --timeout=300s
+deployment "jaeger" successfully rolled out
++ kubectl -n observability rollout status deployment/obs-grafana --timeout=300s
+Waiting for deployment "obs-grafana" rollout to finish: 0 of 1 updated replicas are available...
+deployment "obs-grafana" successfully rolled out
++ kubectl -n observability rollout status statefulset/obs-kube-prometheus-stack-prometheus --timeout=300s
+Error from server (NotFound): statefulsets.apps "obs-kube-prometheus-stack-prometheus" not found
++ err 'prometheus not ready'
++ echo '[ERROR] prometheus not ready'
+[ERROR] prometheus not ready
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-02-23 03:08:40 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.29.0
+data plane version: 1.27.0 (6 proxies), 1.29.0 (3 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-02-11T11:20:31Z
+destinationrules.networking.istio.io        2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io            2026-02-11T11:20:31Z
+gateways.networking.istio.io                2026-02-11T11:20:31Z
+peerauthentications.security.istio.io       2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io            2026-02-11T11:20:31Z
+requestauthentications.security.istio.io    2026-02-11T11:20:31Z
+serviceentries.networking.istio.io          2026-02-11T11:20:31Z
+sidecars.networking.istio.io                2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io              2026-02-11T11:20:31Z
+virtualservices.networking.istio.io         2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io             2026-02-11T11:20:30Z
+workloadentries.networking.istio.io         2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io          2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage->reviews == *\-\>* ]]
++ SOURCE_SERVICE=productpage
++ TARGET_SERVICE=reviews
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_tail --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=63948
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 63948
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z '' ]]
+++ detect_target_url
+++ local path=/
+++ [[ bookinfo == \b\o\o\k\i\n\f\o ]]
+++ path=/productpage
+++ command -v minikube
+++ minikube status
+++ local ip nodeport
++++ minikube ip
+++ ip=192.168.49.2
++++ kubectl -n istio-system get svc istio-ingressgateway -o 'jsonpath={.spec.ports[?(@.name=="http2")].nodePort}'
+++ nodeport=32515
+++ [[ -n 192.168.49.2 ]]
+++ [[ -n 32515 ]]
+++ echo http://192.168.49.2:32515/productpage
+++ return 0
++ TARGET_URL=http://192.168.49.2:32515/productpage
++ [[ -n http://192.168.49.2:32515/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=72
++ FAULT_START_AFTER_WARMUP=24
++ TOTAL_LOAD_SEC=180
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-030848
++ kubectl delete job loadgen-exp-030848 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-030848 created
++ sleep 60
++ sleep 24
++ [[ delay != \n\o\n\e ]]
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --apply --fault delay --target_service reviews --source_service productpage --fixed_delay_ms 200 --http_status 500 --percentage 10 --namespace mesh-app --obs-namespace observability --target_url http://192.168.49.2:32515/productpage
++ kubectl get svc reviews -n mesh-app
++ err 'Target service not found: reviews in ns=mesh-app'
++ echo '[ERROR] Target service not found: reviews in ns=mesh-app'
+[ERROR] Target service not found: reviews in ns=mesh-app
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-02-23 03:11:05 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.29.0
+data plane version: 1.27.0 (6 proxies), 1.29.0 (3 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-02-11T11:20:31Z
+destinationrules.networking.istio.io        2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io            2026-02-11T11:20:31Z
+gateways.networking.istio.io                2026-02-11T11:20:31Z
+peerauthentications.security.istio.io       2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io            2026-02-11T11:20:31Z
+requestauthentications.security.istio.io    2026-02-11T11:20:31Z
+serviceentries.networking.istio.io          2026-02-11T11:20:31Z
+sidecars.networking.istio.io                2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io              2026-02-11T11:20:31Z
+virtualservices.networking.istio.io         2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io             2026-02-11T11:20:30Z
+workloadentries.networking.istio.io         2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io          2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage == *\-\>* ]]
++ [[ productpage == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_tail --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=64415
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 64415
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z '' ]]
+++ detect_target_url
+++ local path=/
+++ [[ bookinfo == \b\o\o\k\i\n\f\o ]]
+++ path=/productpage
+++ command -v minikube
+++ minikube status
+++ local ip nodeport
++++ minikube ip
+++ ip=192.168.49.2
++++ kubectl -n istio-system get svc istio-ingressgateway -o 'jsonpath={.spec.ports[?(@.name=="http2")].nodePort}'
+++ nodeport=32515
+++ [[ -n 192.168.49.2 ]]
+++ [[ -n 32515 ]]
+++ echo http://192.168.49.2:32515/productpage
+++ return 0
++ TARGET_URL=http://192.168.49.2:32515/productpage
++ [[ -n http://192.168.49.2:32515/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=72
++ FAULT_START_AFTER_WARMUP=24
++ TOTAL_LOAD_SEC=180
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-031113
++ kubectl delete job loadgen-exp-031113 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-031113 created
++ sleep 60
++ sleep 24
++ [[ delay != \n\o\n\e ]]
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --apply --fault delay --target_service productpage --fixed_delay_ms 200 --http_status 500 --percentage 10 --namespace mesh-app --obs-namespace observability --target_url http://192.168.49.2:32515/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:32515/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=64654
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 64654
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=true
++ sleep 72
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --clear --fault delay --target_service productpage --namespace mesh-app --obs-namespace observability --target_url http://192.168.49.2:32515/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:32515/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=65190
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 65190
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=false
++ kubectl wait --for=condition=complete job/loadgen-exp-031113 -n mesh-app --timeout=480s
+==== 2026-02-23 03:21:05 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.29.0
+data plane version: 1.27.0 (6 proxies), 1.29.0 (3 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-02-11T11:20:31Z
+destinationrules.networking.istio.io        2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io            2026-02-11T11:20:31Z
+gateways.networking.istio.io                2026-02-11T11:20:31Z
+peerauthentications.security.istio.io       2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io            2026-02-11T11:20:31Z
+requestauthentications.security.istio.io    2026-02-11T11:20:31Z
+serviceentries.networking.istio.io          2026-02-11T11:20:31Z
+sidecars.networking.istio.io                2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io              2026-02-11T11:20:31Z
+virtualservices.networking.istio.io         2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io             2026-02-11T11:20:30Z
+workloadentries.networking.istio.io         2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io          2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage == *\-\>* ]]
++ [[ productpage == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_tail --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=66029
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 66029
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ [[ -n http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=72
++ FAULT_START_AFTER_WARMUP=24
++ TOTAL_LOAD_SEC=180
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-032111
++ kubectl delete job loadgen-exp-032111 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-032111 created
++ sleep 60
++ sleep 24
++ [[ delay != \n\o\n\e ]]
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --apply --fault delay --target_service productpage --fixed_delay_ms 200 --http_status 500 --percentage 10 --namespace mesh-app --obs-namespace observability --target_url http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=66251
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 66251
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=true
++ sleep 72
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --clear --fault delay --target_service productpage --namespace mesh-app --obs-namespace observability --target_url http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=66789
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
+error: timed out waiting for the condition on jobs/loadgen-exp-031113
++ err 'Load job did not complete'
++ echo '[ERROR] Load job did not complete'
+[ERROR] Load job did not complete
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 66789
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=false
++ kubectl wait --for=condition=complete job/loadgen-exp-032111 -n mesh-app --timeout=480s
+error: timed out waiting for the condition on jobs/loadgen-exp-032111
++ err 'Load job did not complete'
++ echo '[ERROR] Load job did not complete'
+[ERROR] Load job did not complete
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-02-23 03:37:27 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.29.0
+data plane version: 1.27.0 (6 proxies), 1.29.0 (3 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-02-11T11:20:31Z
+destinationrules.networking.istio.io        2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io            2026-02-11T11:20:31Z
+gateways.networking.istio.io                2026-02-11T11:20:31Z
+peerauthentications.security.istio.io       2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io            2026-02-11T11:20:31Z
+requestauthentications.security.istio.io    2026-02-11T11:20:31Z
+serviceentries.networking.istio.io          2026-02-11T11:20:31Z
+sidecars.networking.istio.io                2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io              2026-02-11T11:20:31Z
+virtualservices.networking.istio.io         2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io             2026-02-11T11:20:30Z
+workloadentries.networking.istio.io         2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io          2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage == *\-\>* ]]
++ [[ productpage == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_tail --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config unchanged
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment spec update to be observed...
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=68867
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 68867
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ [[ -n http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=36
++ FAULT_START_AFTER_WARMUP=12
++ TOTAL_LOAD_SEC=120
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-033734
++ kubectl delete job loadgen-exp-033734 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-033734 created
++ sleep 60
++ sleep 12
++ [[ delay != \n\o\n\e ]]
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --apply --fault delay --target_service productpage --fixed_delay_ms 200 --http_status 500 --percentage 10 --namespace mesh-app --obs-namespace observability --target_url http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=69081
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789129.556,"44.91171951765455"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789129.556,"44.91171951765455"]}]}}'
+++ extract_prom_value
++ before_p95=44.91171951765455
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789149.850,"45.174505599240824"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789149.850,"45.174505599240824"]}]}}'
+++ extract_prom_value
++ after_p95=45.174505599240824
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: 44.91171951765455 -> 45.174505599240824'
+Prometheus P95 before/after: 44.91171951765455 -> 45.174505599240824
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 69081
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=true
++ sleep 36
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --clear --fault delay --target_service productpage --namespace mesh-app --obs-namespace observability --target_url http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=69492
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789289.608,"29.423076923076874"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789289.608,"29.423076923076874"]}]}}'
+++ extract_prom_value
++ before_p95=29.423076923076874
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789309.865,"NaN"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789309.865,"NaN"]}]}}'
+++ extract_prom_value
++ after_p95=NaN
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: 29.423076923076874 -> NaN'
+Prometheus P95 before/after: 29.423076923076874 -> NaN
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 69492
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
++ FAULT_APPLIED=false
++ kubectl wait --for=condition=complete job/loadgen-exp-033734 -n mesh-app --timeout=420s
+job.batch/loadgen-exp-033734 condition met
++ kubectl logs job/loadgen-exp-033734 -n mesh-app
+++ date +%Y%m%d_%H%M%S
++ RUN_TS=20260223_034330
++ OUTPUT_DIR='/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay'
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/07_collect_metrics.sh' --window 60 --output_dir '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay' --obs-namespace observability --app-namespace mesh-app
+[INFO] Collecting base cluster snapshots into /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay...
+[INFO] Capturing observability endpoint snapshots...
+[INFO] Port-forward to Prometheus service obs-kube-prometheus-stack-prometheus in ns=observability...
+[INFO] Dumping sampling/fault config snapshots...
+[WARN] tracing-sampling-policy not found
+[INFO] Validation: output files count
+files: 12
+[INFO] Metrics collection completed: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay
++ echo '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay'
++ log 'Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay'
++ echo '[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay'
+[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay
++ echo 'RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay'
+RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034330_bookinfo_baseline_tail_mid_delay
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-02-23 03:43:46 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+Server Version: v1.35.0
+[INFO] Checking istioctl version...
+client version: 1.29.0
+control plane version: 1.29.0
+data plane version: 1.27.0 (6 proxies), 1.29.0 (3 proxies)
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-02-11T11:20:31Z
+destinationrules.networking.istio.io        2026-02-11T11:20:31Z
+envoyfilters.networking.istio.io            2026-02-11T11:20:31Z
+gateways.networking.istio.io                2026-02-11T11:20:31Z
+peerauthentications.security.istio.io       2026-02-11T11:20:31Z
+proxyconfigs.networking.istio.io            2026-02-11T11:20:31Z
+requestauthentications.security.istio.io    2026-02-11T11:20:31Z
+serviceentries.networking.istio.io          2026-02-11T11:20:31Z
+sidecars.networking.istio.io                2026-02-11T11:20:31Z
+telemetries.telemetry.istio.io              2026-02-11T11:20:31Z
+virtualservices.networking.istio.io         2026-02-11T11:20:31Z
+wasmplugins.extensions.istio.io             2026-02-11T11:20:30Z
+workloadentries.networking.istio.io         2026-02-11T11:20:31Z
+workloadgroups.networking.istio.io          2026-02-11T11:20:31Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage == *\-\>* ]]
++ [[ productpage == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_head --budget low --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_head, budget=low'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=low'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=low
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_low.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 1
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+      processors: [probabilistic_sampler, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=70076
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+++ true
++ TRACE_CNT=
++ echo 'trace_count_last_15m(service=productpage, limit=200): '
+trace_count_last_15m(service=productpage, limit=200): 
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 70076
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_head, budget=low, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ [[ -n http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=18
++ FAULT_START_AFTER_WARMUP=6
++ TOTAL_LOAD_SEC=90
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-034352
++ kubectl delete job loadgen-exp-034352 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-034352 created
++ sleep 60
++ sleep 6
++ [[ none != \n\o\n\e ]]
++ kubectl wait --for=condition=complete job/loadgen-exp-034352 -n mesh-app --timeout=390s
+job.batch/loadgen-exp-034352 condition met
++ kubectl logs job/loadgen-exp-034352 -n mesh-app
+++ date +%Y%m%d_%H%M%S
++ RUN_TS=20260223_034531
++ OUTPUT_DIR='/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none'
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/07_collect_metrics.sh' --window 30 --output_dir '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none' --obs-namespace observability --app-namespace mesh-app
+[INFO] Collecting base cluster snapshots into /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none...
+[INFO] Capturing observability endpoint snapshots...
+[INFO] Port-forward to Prometheus service obs-kube-prometheus-stack-prometheus in ns=observability...
+[INFO] Dumping sampling/fault config snapshots...
+[WARN] tracing-sampling-policy not found
+[INFO] Validation: output files count
+files: 12
+[INFO] Metrics collection completed: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none
++ echo '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none'
++ log 'Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none'
++ echo '[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none'
+[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none
++ echo 'RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none'
+RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260223_034531_bookinfo_baseline_head_low_none
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-03-07 17:19:59 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+[INFO] Checking istioctl version...
+client version: 1.27.0
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   27h   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-03-07T16:48:10Z
+destinationrules.networking.istio.io        2026-03-07T16:48:10Z
+envoyfilters.networking.istio.io            2026-03-07T16:48:10Z
+gateways.networking.istio.io                2026-03-07T16:48:10Z
+peerauthentications.security.istio.io       2026-03-07T16:48:10Z
+proxyconfigs.networking.istio.io            2026-03-07T16:48:10Z
+requestauthentications.security.istio.io    2026-03-07T16:48:10Z
+serviceentries.networking.istio.io          2026-03-07T16:48:10Z
+sidecars.networking.istio.io                2026-03-07T16:48:10Z
+telemetries.telemetry.istio.io              2026-03-07T16:48:10Z
+virtualservices.networking.istio.io         2026-03-07T16:48:10Z
+wasmplugins.extensions.istio.io             2026-03-07T16:48:10Z
+workloadentries.networking.istio.io         2026-03-07T16:48:10Z
+workloadgroups.networking.istio.io          2026-03-07T16:48:10Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage- == *\-\>* ]]
++ [[ productpage- == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage-
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_tail --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_tail, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_tail_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 30000
+    expected_new_traces_per_sec: 150
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 300
+      - name: fallback-probability
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 1s
+      processors: [tail_sampling, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=12314
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ JAEGER_SERVICE_NAME=productpage.mesh-app
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=0
++ [[ 0 == \0 ]]
++ JAEGER_SERVICE_NAME=productpage
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=0
++ echo 'trace_count_last_15m(service=productpage, limit=200): 0'
+trace_count_last_15m(service=productpage, limit=200): 0
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 12314
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_tail, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z '' ]]
+++ detect_target_url
+++ local path=/
+++ [[ bookinfo == \b\o\o\k\i\n\f\o ]]
+++ path=/productpage
+++ command -v minikube
+++ minikube status
+++ local ip nodeport
++++ minikube ip
+++ ip=192.168.49.2
++++ kubectl -n istio-system get svc istio-ingressgateway -o 'jsonpath={.spec.ports[?(@.name=="http2")].nodePort}'
+++ nodeport=31475
+++ [[ -n 192.168.49.2 ]]
+++ [[ -n 31475 ]]
+++ echo http://192.168.49.2:31475/productpage
+++ return 0
++ TARGET_URL=http://192.168.49.2:31475/productpage
++ [[ -n http://192.168.49.2:31475/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=180
++ FAULT_START_AFTER_WARMUP=60
++ TOTAL_LOAD_SEC=360
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-172006
++ kubectl delete job loadgen-exp-172006 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-172006 created
++ sleep 60
++ sleep 60
++ [[ delay != \n\o\n\e ]]
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/05_inject_fault.sh' --apply --fault delay --target_service productpage- --fixed_delay_ms 200 --http_status 500 --percentage 10 --namespace mesh-app --obs-namespace observability --target_url http://192.168.49.2:31475/productpage
++ kubectl get svc productpage- -n mesh-app
++ err 'Target service not found: productpage- in ns=mesh-app'
++ echo '[ERROR] Target service not found: productpage- in ns=mesh-app'
+[ERROR] Target service not found: productpage- in ns=mesh-app
++ exit 1
++ cleanup_fault
++ [[ false == true ]]
+==== 2026-03-07 17:43:05 experiment run ====
++ trap cleanup_fault EXIT
++ ensure_prereq
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/00_prereq_check.sh'
+[INFO] Checking kubectl version...
+Client Version: v1.35.1
+Kustomize Version: v5.7.1
+[INFO] Checking istioctl version...
+client version: 1.27.0
+[INFO] Checking helm version...
+version.BuildInfo{Version:"v4.1.1", GitCommit:"5caf0044d4ef3d62a955440272999e139aafbbed", GitTreeState:"clean", GoVersion:"go1.25.7", KubeClientVersion:"v1.35"}
+[INFO] Checking minikube status...
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+[INFO] Checking kubectl connectivity...
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   28h   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0
+[INFO] Validation: checking Istio CRDs visibility (may be empty before install)...
+authorizationpolicies.security.istio.io     2026-03-07T16:48:10Z
+destinationrules.networking.istio.io        2026-03-07T16:48:10Z
+envoyfilters.networking.istio.io            2026-03-07T16:48:10Z
+gateways.networking.istio.io                2026-03-07T16:48:10Z
+peerauthentications.security.istio.io       2026-03-07T16:48:10Z
+proxyconfigs.networking.istio.io            2026-03-07T16:48:10Z
+requestauthentications.security.istio.io    2026-03-07T16:48:10Z
+serviceentries.networking.istio.io          2026-03-07T16:48:10Z
+sidecars.networking.istio.io                2026-03-07T16:48:10Z
+telemetries.telemetry.istio.io              2026-03-07T16:48:10Z
+virtualservices.networking.istio.io         2026-03-07T16:48:10Z
+wasmplugins.extensions.istio.io             2026-03-07T16:48:10Z
+workloadentries.networking.istio.io         2026-03-07T16:48:10Z
+workloadgroups.networking.istio.io          2026-03-07T16:48:10Z
+[INFO] Prerequisite checks completed.
++ ensure_istio
++ kubectl -n istio-system get deploy istiod
++ ensure_app
++ local key_deploy=productpage
++ [[ bookinfo == \o\n\l\i\n\e\b\o\u\t\i\q\u\e ]]
++ kubectl -n mesh-app get deploy productpage
++ ensure_observability
++ kubectl -n observability get deploy otel-collector
++ parse_target
++ [[ productpage == *\-\>* ]]
++ [[ productpage == /* ]]
++ SOURCE_SERVICE=
++ TARGET_SERVICE=productpage
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/04_apply_sampling_policy.sh' --policy baseline_head --budget mid --namespace observability
++ POLICY_FILE='/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml'
++ [[ -f /Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml ]]
++ log 'Applying sampling policy ConfigMap for policy=baseline_head, budget=mid'
++ echo '[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=mid'
+[INFO] Applying sampling policy ConfigMap for policy=baseline_head, budget=mid
++ kubectl apply -n observability -f '/Users/young/Desktop/individual Proj/project-ysh/manifests/sampling/baseline_head_mid.yaml'
+configmap/otel-collector-config configured
++ log 'Rolling restart collector deployment...'
++ echo '[INFO] Rolling restart collector deployment...'
+[INFO] Rolling restart collector deployment...
++ kubectl -n observability rollout restart deployment/otel-collector
+deployment.apps/otel-collector restarted
++ kubectl -n observability rollout status deployment/otel-collector --timeout=240s
+Waiting for deployment "otel-collector" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "otel-collector" rollout to finish: 1 old replicas are pending termination...
+deployment "otel-collector" successfully rolled out
++ log 'Current effective config summary (otel-collector-config.data.config.yaml):'
++ echo '[INFO] Current effective config summary (otel-collector-config.data.config.yaml):'
+[INFO] Current effective config summary (otel-collector-config.data.config.yaml):
++ kubectl get configmap otel-collector-config -n observability -o 'go-template={{index .data "config.yaml"}}'
++ awk '
+      /processors:/ {inproc=1}
+      inproc==1 && /exporters:/ {inproc=0}
+      inproc==1 {print}
+    '
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 10
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+      processors: [probabilistic_sampler, batch]
++ log 'Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
++ echo '[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):'
+[INFO] Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):
++ PF_PID=15340
++ trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ kubectl -n observability port-forward svc/jaeger-query 16686:16686
++ sleep 3
++ JAEGER_SERVICE_NAME=productpage.mesh-app
+++ curl -fsS 'http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200'
+++ python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ TRACE_CNT=200
++ [[ 200 == \0 ]]
++ [[ 200 == \N\A ]]
++ echo 'trace_count_last_15m(service=productpage.mesh-app, limit=200): 200'
+trace_count_last_15m(service=productpage.mesh-app, limit=200): 200
++ echo check_command:
+check_command:
++ echo 'curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200" | python3 -c '\''import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'\'''
+curl -fsS "http://127.0.0.1:16686/api/traces?service=productpage.mesh-app&lookback=15m&limit=200" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))'
++ echo 'expected: with same load pattern, low < mid < high (trace count or exported spans/sec).'
+expected: with same load pattern, low < mid < high (trace count or exported spans/sec).
++ kill 15340
++ true
++ trap - EXIT
++ log 'Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability'
++ echo '[INFO] Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability'
+[INFO] Sampling policy applied successfully: policy=baseline_head, budget=mid, namespace=observability
++ log 'Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
++ echo '[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log'
+[INFO] Log file: /Users/young/Desktop/individual Proj/project-ysh/results/sampling.log
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ [[ -n http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ WARMUP_SEC=60
++ FAULT_PHASE_SEC=108
++ FAULT_START_AFTER_WARMUP=36
++ TOTAL_LOAD_SEC=240
+++ date +%H%M%S
++ LOAD_JOB_NAME=loadgen-exp-174312
++ kubectl delete job loadgen-exp-174312 -n mesh-app --ignore-not-found
++ kubectl apply -n mesh-app -f -
+job.batch/loadgen-exp-174312 created
++ sleep 60
++ sleep 36
++ [[ none != \n\o\n\e ]]
++ kubectl wait --for=condition=complete job/loadgen-exp-174312 -n mesh-app --timeout=540s
+job.batch/loadgen-exp-174312 condition met
++ kubectl logs job/loadgen-exp-174312 -n mesh-app
+++ date +%Y%m%d_%H%M%S
++ RUN_TS=20260307_174721
++ OUTPUT_DIR='/Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none'
++ bash '/Users/young/Desktop/individual Proj/project-ysh/scripts/07_collect_metrics.sh' --window 180 --output_dir '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none' --obs-namespace observability --app-namespace mesh-app
+[INFO] Collecting base cluster snapshots into /Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none...
+[INFO] Capturing observability endpoint snapshots...
+[INFO] Port-forward to Prometheus service obs-kube-prometheus-stack-prometheus in ns=observability...
+[INFO] Dumping sampling/fault config snapshots...
+[WARN] tracing-sampling-policy not found
+/Users/young/Desktop/individual Proj/project-ysh/scripts/07_collect_metrics.sh: line 189: 15964 Terminated: 15          kubectl -n "${OBS_NS}" port-forward svc/"${PROM_SVC}" "${PROM_PORT_LOCAL}:9090" > /tmp/collect-prom-pf.log 2>&1
+[INFO] Validation: output files count
+files: 12
+[INFO] Metrics collection completed: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none
++ echo '/Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none'
++ log 'Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none'
++ echo '[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none'
+[INFO] Experiment completed. Result directory: /Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none
++ echo 'RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none'
+RESULT_DIR=/Users/young/Desktop/individual Proj/project-ysh/results/run_20260307_174721_bookinfo_baseline_head_mid_none
++ cleanup_fault
++ [[ false == true ]]

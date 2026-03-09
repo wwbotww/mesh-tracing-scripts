@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage
+  labels:
+    app: productpage
+    app.kubernetes.io/part-of: bookinfo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productpage
+  template:
+    metadata:
+      labels:
+        app: productpage
+        app.kubernetes.io/part-of: bookinfo
+    spec:
+      containers:
+      - name: productpage
+        image: docker.io/istio/examples-bookinfo-productpage-v1:1.20.3
+        ports:
+        - containerPort: 9080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+  labels:
+    app.kubernetes.io/part-of: bookinfo
+spec:
+  selector:
+    app: productpage
+  ports:
+  - port: 9080
+    targetPort: 9080
+
+# TODO: replace with full official Bookinfo manifests (details/reviews/ratings + gateway).

@@ -1,0 +1,231 @@
+# Reproducible Experiment Setup
+
+This document provides a single-path runbook for:
+
+- Kubernetes / Minikube
+- Istio service mesh
+- Demo app (`bookinfo` or `onlineboutique`)
+- OpenTelemetry Collector
+- Jaeger
+- Prometheus
+- Grafana
+- Fault injection and sampling policy switching
+
+## 1) Prerequisites
+
+You need these tools in your PATH:
+
+- `kubectl`
+- `istioctl`
+- `helm`
+- `minikube`
+
+Start a local cluster (Docker driver unified path):
+
+```bash
+minikube start --driver=docker --nodes=2 --cpus=4 --memory=6144
+```
+
+Run prerequisite checks:
+
+```bash
+bash scripts/00_prereq_check.sh
+```
+
+Validation points:
+
+- command exits with code 0
+- `kubectl get nodes` returns nodes
+
+## 2) Install Istio
+
+```bash
+bash scripts/01_install_istio.sh --profile demo
+```
+
+Validation points:
+
+- `kubectl -n istio-system get pods` shows `istiod` running
+- `kubectl get ns mesh-app --show-labels` includes `istio-injection=enabled`
+
+## 3) Deploy Application
+
+Choose one:
+
+```bash
+bash scripts/02_deploy_app.sh --app bookinfo
+# or
+bash scripts/02_deploy_app.sh --app onlineboutique
+```
+
+Validation points:
+
+- app pods are running in `mesh-app`
+- service `productpage` (bookinfo) or `frontend` (onlineboutique) exists
+
+## 4) Install Observability Stack
+
+```bash
+bash scripts/03_install_observability.sh --namespace observability --app-namespace mesh-app
+```
+
+Validation points:
+
+- `otel-collector` pod is Running
+- Jaeger UI is reachable
+- Prometheus can query Istio/Envoy metrics (`istio_request_duration*` or `envoy_cluster_*`)
+
+Optional local UI access:
+
+```bash
+# Jaeger UI
+kubectl -n observability port-forward svc/jaeger-query 16686:16686
+# Open http://127.0.0.1:16686
+
+# Prometheus UI (kube-prometheus-stack)
+kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+# Open http://127.0.0.1:9090
+
+# Grafana UI (kube-prometheus-stack)
+kubectl -n observability port-forward svc/obs-grafana 3000:80
+# Open http://127.0.0.1:3000
+```
+
+## 5) Apply Sampling Policy
+
+Examples:
+
+```bash
+bash scripts/04_apply_sampling_policy.sh --policy baseline_head --budget mid
+bash scripts/04_apply_sampling_policy.sh --policy baseline_tail --budget low
+bash scripts/04_apply_sampling_policy.sh --policy ours --budget high
+```
+
+Validation points:
+
+- script exits successfully
+- `kubectl -n observability get configmap otel-collector-config`
+- `kubectl -n mesh-app get telemetry tracing-default`
+
+## 6) Inject Fault
+
+Delay fault example:
+
+```bash
+bash scripts/05_inject_fault.sh \
+  --apply --fault delay --target_service productpage \
+  --fixed_delay_ms 500 --percentage 50 \
+  --namespace mesh-app --obs-namespace observability \
+  --target_url "http://productpage.mesh-app.svc.cluster.local:9080/productpage"
+```
+
+Abort fault example:
+
+```bash
+bash scripts/05_inject_fault.sh \
+  --apply --fault abort --target_service productpage \
+  --http_status 500 --percentage 20 \
+  --namespace mesh-app --obs-namespace observability \
+  --target_url "http://productpage.mesh-app.svc.cluster.local:9080/productpage"
+```
+
+Validation points:
+
+- `kubectl -n mesh-app get virtualservice`
+- downstream request latency/error rate changes under load
+
+## 7) Run Load
+
+```bash
+bash scripts/06_run_load.sh \
+  --app bookinfo \
+  --rps 50 \
+  --duration 60 \
+  --target_url "http://productpage.mesh-app.svc.cluster.local:9080/productpage"
+```
+
+Validation points:
+
+- Job `loadgen` completes
+- `kubectl -n mesh-app logs job/loadgen` shows HTTP status codes
+
+## 8) Collect Metrics and Snapshots
+
+```bash
+bash scripts/07_collect_metrics.sh --obs-namespace observability --app-namespace mesh-app
+```
+
+Validation points:
+
+- new folder created under `results/<timestamp>/`
+- files include `pods_all.txt`, `events.txt`, `virtualservices.txt`, etc.
+
+## 9) Cleanup
+
+```bash
+bash scripts/99_cleanup.sh --app bookinfo
+```
+
+If your app namespace is the default path in this repo:
+
+```bash
+bash scripts/99_cleanup.sh --app bookinfo --app-namespace mesh-app
+```
+
+Validation points:
+
+- observability deployments removed or scaled down per your choice
+- fault/load resources removed
+
+## 10) One-Click Experiment Driver
+
+Example command:
+
+```bash
+bash scripts/08_run_experiment.sh \
+  --app bookinfo \
+  --policy baseline_tail \
+  --budget mid \
+  --fault delay \
+  --target productpage->reviews \
+  --rps 200 \
+  --duration 300
+```
+
+What it does:
+
+- checks and installs prerequisites/components when needed
+- applies sampling policy
+- starts load and warms up 60s
+- injects fault during middle 60% of experiment duration
+- clears fault and collects metrics
+- prints final result directory path
+
+Main logs:
+
+- driver log: `results/exp_driver.log`
+- latest result dir pointer: `results/last_experiment_dir.txt`
+
+## Recommended Experiment Matrix
+
+For your thesis focus ("tracing overhead control and reduction"), run:
+
+1. app: `bookinfo` and `onlineboutique`
+2. policy: `baseline_head`, `baseline_tail`, `ours`
+3. budget: `low`, `mid`, `high`
+4. fault: none / `delay` / `abort`
+
+Collect per-run outputs in `results/` and compare:
+
+- request latency percentiles
+- error rate
+- trace volume (spans/sec)
+- control-plane and data-plane overhead (CPU/memory)
+
+## TODO Gaps to Complete
+
+- Replace simplified app manifests with full official manifests.
+- Wire OTel Collector exporter to Jaeger and/or Tempo.
+- Add Prometheus scrape jobs for Istio proxies and control plane.
+- Add Grafana dashboards for overhead and tail latency decomposition.
+- Implement concrete `ours` sampling algorithm and document policy logic.

@@ -1,0 +1,22 @@
+NAME                                                        READY   STATUS    RESTARTS   AGE
+pod/alertmanager-obs-kube-prometheus-stack-alertmanager-0   2/2     Running   0          66m
+pod/jaeger-7dc86c798f-vvfdj                                 1/1     Running   0          67m
+pod/obs-grafana-55b6f9c87b-tjrwq                            3/3     Running   0          62m
+pod/obs-kube-prometheus-stack-operator-649b567f76-sczb8     1/1     Running   0          67m
+pod/obs-kube-state-metrics-6dc7c57bbf-zzb96                 1/1     Running   0          67m
+pod/obs-prometheus-node-exporter-lvrlm                      1/1     Running   0          67m
+pod/otel-collector-5765fcbf8b-ktkl4                         1/1     Running   0          6m2s
+pod/prometheus-obs-kube-prometheus-stack-prometheus-0       2/2     Running   0          66m
+
+NAME                                             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                 AGE
+service/alertmanager-operated                    ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP              66m
+service/jaeger-collector                         ClusterIP   10.108.0.247     <none>        4317/TCP,4318/TCP,14250/TCP,14268/TCP   67m
+service/jaeger-query                             ClusterIP   10.100.156.100   <none>        16686/TCP                               67m
+service/obs-grafana                              ClusterIP   10.106.27.22     <none>        80/TCP                                  67m
+service/obs-kube-prometheus-stack-alertmanager   ClusterIP   10.100.183.154   <none>        9093/TCP,8080/TCP                       67m
+service/obs-kube-prometheus-stack-operator       ClusterIP   10.107.9.61      <none>        443/TCP                                 67m
+service/obs-kube-prometheus-stack-prometheus     ClusterIP   10.108.41.29     <none>        9090/TCP,8080/TCP                       67m
+service/obs-kube-state-metrics                   ClusterIP   10.100.250.117   <none>        8080/TCP                                67m
+service/obs-prometheus-node-exporter             ClusterIP   10.97.10.60      <none>        9100/TCP                                67m
+service/otel-collector                           ClusterIP   10.104.88.25     <none>        4317/TCP,4318/TCP,8889/TCP              67m
+service/prometheus-operated                      ClusterIP   None             <none>        9090/TCP                                66m

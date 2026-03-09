@@ -1,0 +1,2 @@
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION     CONTAINER-RUNTIME
+minikube   Ready    control-plane   11d   v1.35.0   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.8.0-90-generic   docker://29.2.0

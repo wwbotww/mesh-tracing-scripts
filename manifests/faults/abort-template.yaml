@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: __FAULT_NAME__
+  labels:
+    app.kubernetes.io/managed-by: trace-exp
+    fault.type: abort
+spec:
+  hosts:
+  - __TARGET_SERVICE__
+  http:
+  - match:
+    - sourceLabels:
+        app: "__SOURCE_SERVICE__"
+    fault:
+      abort:
+        httpStatus: __HTTP_STATUS__
+        percentage:
+          value: __PERCENTAGE__
+    route:
+    - destination:
+        host: __TARGET_SERVICE__
+  - route:
+    - destination:
+        host: __TARGET_SERVICE__

@@ -1,0 +1,1369 @@
+==== 2026-02-23 03:10:12 fault operation ====
++ kubectl get svc reviews -n mesh-app
++ err 'Target service not found: reviews in ns=mesh-app'
++ echo '[ERROR] Target service not found: reviews in ns=mesh-app'
+[ERROR] Target service not found: reviews in ns=mesh-app
++ exit 1
+==== 2026-02-23 03:12:37 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:32515/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=64654
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 64654
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:15:53 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:32515/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=65190
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:32515/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:32515/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 65190
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:22:36 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=66251
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 66251
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:25:52 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=66789
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 66789
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:38:46 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=69081
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789129.556,"44.91171951765455"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789129.556,"44.91171951765455"]}]}}'
+++ extract_prom_value
++ before_p95=44.91171951765455
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-delay-any-to-productpage created
++ kubectl get virtualservice fault-delay-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-delay-any-to-productpage              ["productpage"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789149.850,"45.174505599240824"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789149.850,"45.174505599240824"]}]}}'
+++ extract_prom_value
++ after_p95=45.174505599240824
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: 44.91171951765455 -> 45.174505599240824'
+Prometheus P95 before/after: 44.91171951765455 -> 45.174505599240824
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 69081
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:41:26 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=69492
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789289.608,"29.423076923076874"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789289.608,"29.423076923076874"]}]}}'
+++ extract_prom_value
++ before_p95=29.423076923076874
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productpage -n mesh-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productpage" deleted from mesh-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789309.865,"NaN"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789309.865,"NaN"]}]}}'
+++ extract_prom_value
++ after_p95=NaN
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productpage'
+Fault name: fault-delay-any-to-productpage
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: 29.423076923076874 -> NaN'
+Prometheus P95 before/after: 29.423076923076874 -> NaN
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 69492
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-02-23 03:45:43 fault operation ====
++ kubectl get svc productpage -n mesh-app
++ [[ -n '' ]]
++ [[ -z http://productpage.mesh-app.svc.cluster.local:9080/productpage ]]
++ before_p95=NA
++ before_err=NA
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
++ PROM_PF_PID=70418
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789546.776,"39.31399878279386"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789546.776,"39.31399878279386"]}]}}'
+++ extract_prom_value
++ before_p95=39.31399878279386
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ abort == \d\e\l\a\y ]]
++ kubectl apply -n mesh-app -f -
+virtualservice.networking.istio.io/fault-abort-any-to-productpage created
++ kubectl get virtualservice fault-abort-any-to-productpage -n mesh-app
+NAME                             GATEWAYS   HOSTS             AGE
+fault-abort-any-to-productpage              ["productpage"]   1s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789567.080,"39.277325538137625"]}]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1771789567.080,"39.277325538137625"]}]}}'
+++ extract_prom_value
++ after_p95=39.277325538137625
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ log 'Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://productpage.mesh-app.svc.cluster.local:9080/productpage
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=1
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=2
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=3
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=4
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=5
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=6
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=7
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=8
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=9
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=10
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=11
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=12
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=13
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=14
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=15
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=16
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=17
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=18
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=19
++ for _ in '$(seq 1 20)'
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://productpage.mesh-app.svc.cluster.local:9080/productpage
+++ true
++ code=000
++ [[ 000 =~ ^2|3|4 ]]
++ fail=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-abort-any-to-productpage'
+Fault name: fault-abort-any-to-productpage
++ echo 'Fault type: abort'
+Fault type: abort
++ echo 'Namespace: mesh-app'
+Namespace: mesh-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productpage'
+Target service: productpage
++ echo 'Prometheus P95 before/after: 39.31399878279386 -> 39.277325538137625'
+Prometheus P95 before/after: 39.31399878279386 -> 39.277325538137625
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 0/20'
+Curl success/fail (20 req): 0/20
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productpage"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productpage",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productpage"}[2m])), 0.0001)
++ kill 70418
++ trap - EXIT
++ log 'Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log'
+[INFO] Fault operation completed. Log file: /Users/young/Desktop/individual Proj/project-ysh/results/fault.log
+==== 2026-03-07 17:22:06 fault operation ====
++ kubectl get svc productpage- -n mesh-app
++ err 'Target service not found: productpage- in ns=mesh-app'
++ echo '[ERROR] Target service not found: productpage- in ns=mesh-app'
+[ERROR] Target service not found: productpage- in ns=mesh-app
++ exit 1

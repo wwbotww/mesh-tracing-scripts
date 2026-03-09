@@ -1,0 +1,26 @@
+{
+  "collected_at": "20260307_174721",
+  "window_seconds": 180,
+  "namespaces": {
+    "observability": "observability",
+    "app": "mesh-app"
+  },
+  "queries": {
+    "p95_latency_ms": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload_namespace="mesh-app"}[180s])) by (le))",
+    "p99_latency_ms": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload_namespace="mesh-app"}[180s])) by (le))",
+    "envoy_cpu_cores_sum": "sum(rate(container_cpu_usage_seconds_total{namespace="mesh-app",container="istio-proxy"}[180s]))",
+    "envoy_cpu_cores_per_pod": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="mesh-app",container="istio-proxy"}[180s]))",
+    "otel_spans_per_sec": "sum(rate(otelcol_exporter_sent_spans{service_instance_id=~".*"}[180s]))",
+    "otel_bytes_per_sec": "sum(rate(otelcol_exporter_sent_bytes{service_instance_id=~".*"}[180s]))",
+    "otel_accepted_spans_per_sec": "sum(rate(otelcol_receiver_accepted_spans{service_instance_id=~".*"}[180s]))"
+  },
+  "results": {
+    "p95_latency_ms": "NA",
+    "p99_latency_ms": "NA",
+    "envoy_cpu_cores_sum": "NA",
+    "envoy_cpu_cores_per_pod": "NA",
+    "otel_spans_per_sec": "NA",
+    "otel_bytes_per_sec": "NA",
+    "otel_accepted_spans_per_sec": "NA"
+  }
+}

@@ -1,0 +1,3 @@
+NAMESPACE   NAME       GATEWAYS               HOSTS   AGE
+default     bookinfo   ["bookinfo-gateway"]   ["*"]   11d
+mesh-app    bookinfo   ["bookinfo-gateway"]   ["*"]   69m
