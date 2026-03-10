@@ -7,7 +7,6 @@ err() { echo "[ERROR] $*" >&2; exit 1; }
 
 APP=""
 NAMESPACE="mesh-app"
-APP_SOURCE="remote"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESULTS_DIR="${ROOT_DIR}/results"
 ISTIO_NS="istio-system"
@@ -18,7 +17,7 @@ ONLINEBOUTIQUE_APP_URL="https://raw.githubusercontent.com/GoogleCloudPlatform/mi
 
 usage() {
   cat <<'EOF'
-Usage: scripts/02_deploy_app.sh --app bookinfo|onlineboutique [--namespace mesh-app] [--source remote|local]
+Usage: scripts/02_deploy_app.sh --app bookinfo|onlineboutique [--namespace mesh-app]
 EOF
 }
 
@@ -39,7 +38,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --app) APP="${2:-}"; shift 2 ;;
     --namespace) NAMESPACE="${2:-}"; shift 2 ;;
-    --source) APP_SOURCE="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown argument: $1" ;;
   esac
@@ -47,7 +45,6 @@ done
 
 [[ -n "${APP}" ]] || err "--app is required"
 [[ "${APP}" == "bookinfo" || "${APP}" == "onlineboutique" ]] || err "--app must be bookinfo|onlineboutique"
-[[ "${APP_SOURCE}" == "remote" || "${APP_SOURCE}" == "local" ]] || err "--source must be remote|local"
 
 command -v kubectl >/dev/null 2>&1 || err "kubectl not found"
 command -v curl >/dev/null 2>&1 || err "curl not found"
@@ -65,7 +62,7 @@ exec > >(tee -a "${LOG_FILE}") 2>&1
 set -x
 
 log "Starting app deployment..."
-log "app=${APP}, namespace=${NAMESPACE}, istio_namespace=${ISTIO_NS}, source=${APP_SOURCE}"
+log "app=${APP}, namespace=${NAMESPACE}, istio_namespace=${ISTIO_NS}"
 
 log "Ensuring target namespace exists..."
 kubectl get ns "${NAMESPACE}" >/dev/null 2>&1 || kubectl create ns "${NAMESPACE}" || err "Failed to create namespace: ${NAMESPACE}"
@@ -75,28 +72,12 @@ kubectl label namespace "${NAMESPACE}" istio-injection=enabled --overwrite || er
 
 if [[ "${APP}" == "bookinfo" ]]; then
   log "Deploying Bookinfo application..."
-  if [[ "${APP_SOURCE}" == "remote" ]]; then
-    kubectl apply -n "${NAMESPACE}" -f "${BOOKINFO_APP_URL}" || err "Failed to apply official Bookinfo manifests"
-  else
-    if [[ -d "${ROOT_DIR}/manifests/app/bookinfo" ]]; then
-      kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/manifests/app/bookinfo" || err "Failed to apply local bookinfo manifests"
-    elif [[ -f "${ROOT_DIR}/manifests/app/bookinfo.yaml" ]]; then
-      kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/manifests/app/bookinfo.yaml" || err "Failed to apply local bookinfo.yaml"
-    else
-      kubectl apply -n "${NAMESPACE}" -f "${BOOKINFO_APP_URL}" || err "Failed to apply official Bookinfo manifests"
-    fi
-  fi
+  kubectl apply -n "${NAMESPACE}" -f "${BOOKINFO_APP_URL}" || err "Failed to apply official Bookinfo manifests"
 
   log "Deploying Bookinfo ingress resources (Gateway + VirtualService)..."
   APPLY_GATEWAY_OK=0
-  if [[ "${APP_SOURCE}" == "local" && -f "${ROOT_DIR}/manifests/istio/bookinfo-gateway.yaml" ]]; then
-    if kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/manifests/istio/bookinfo-gateway.yaml"; then
-      APPLY_GATEWAY_OK=1
-    fi
-  else
-    if kubectl apply -n "${NAMESPACE}" -f "${BOOKINFO_GATEWAY_URL}"; then
-      APPLY_GATEWAY_OK=1
-    fi
+  if kubectl apply -n "${NAMESPACE}" -f "${BOOKINFO_GATEWAY_URL}"; then
+    APPLY_GATEWAY_OK=1
   fi
   if [[ "${APPLY_GATEWAY_OK}" -eq 0 ]]; then
     warn "Bookinfo gateway manifest apply failed (likely API version mismatch). Applying compatible v1beta1 gateway/virtualservice fallback..."
@@ -146,17 +127,7 @@ EOF
   fi
 else
   log "Deploying OnlineBoutique (gRPC microservices)..."
-  if [[ "${APP_SOURCE}" == "remote" ]]; then
-    kubectl apply -n "${NAMESPACE}" -f "${ONLINEBOUTIQUE_APP_URL}" || err "Failed to apply official OnlineBoutique manifests"
-  else
-    if [[ -d "${ROOT_DIR}/manifests/app/onlineboutique" ]]; then
-      kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/manifests/app/onlineboutique" || err "Failed to apply local onlineboutique manifests"
-    elif [[ -f "${ROOT_DIR}/manifests/app/onlineboutique.yaml" ]]; then
-      kubectl apply -n "${NAMESPACE}" -f "${ROOT_DIR}/manifests/app/onlineboutique.yaml" || err "Failed to apply local onlineboutique.yaml"
-    else
-      kubectl apply -n "${NAMESPACE}" -f "${ONLINEBOUTIQUE_APP_URL}" || err "Failed to apply official OnlineBoutique manifests"
-    fi
-  fi
+  kubectl apply -n "${NAMESPACE}" -f "${ONLINEBOUTIQUE_APP_URL}" || err "Failed to apply official OnlineBoutique manifests"
 
   log "Deploying OnlineBoutique ingress resources (Gateway + VirtualService)..."
   kubectl apply -n "${NAMESPACE}" -f - <<EOF
@@ -197,7 +168,7 @@ EOF
 fi
 
 log "Validation: waiting for pods to become Ready..."
-kubectl wait --for=condition=Ready pods --all -n "${NAMESPACE}" --timeout=300s || err "Not all pods became Ready in namespace ${NAMESPACE}"
+kubectl wait --for=condition=Ready pods --all -n "${NAMESPACE}" --field-selector=status.phase=Running --timeout=300s || err "Not all running pods became Ready in namespace ${NAMESPACE}"
 
 log "Validation: deployments rollout completed..."
 while IFS= read -r deploy; do
@@ -217,33 +188,9 @@ done
 if [[ "${MISSING_SIDECAR}" -eq 1 ]]; then
   log "No sidecar detected in some pods; applying manual injection fallback via istioctl kube-inject..."
   if [[ "${APP}" == "bookinfo" ]]; then
-    if [[ "${APP_SOURCE}" == "remote" ]]; then
-      curl -fsSL "${BOOKINFO_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official Bookinfo"
-    else
-      if [[ -d "${ROOT_DIR}/manifests/app/bookinfo" ]]; then
-        for f in "${ROOT_DIR}"/manifests/app/bookinfo/*.yaml; do
-          istioctl kube-inject -f "${f}" | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for ${f}"
-        done
-      elif [[ -f "${ROOT_DIR}/manifests/app/bookinfo.yaml" ]]; then
-        istioctl kube-inject -f "${ROOT_DIR}/manifests/app/bookinfo.yaml" | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for bookinfo.yaml"
-      else
-        curl -fsSL "${BOOKINFO_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official Bookinfo"
-      fi
-    fi
+    curl -fsSL "${BOOKINFO_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official Bookinfo"
   else
-    if [[ "${APP_SOURCE}" == "remote" ]]; then
-      curl -fsSL "${ONLINEBOUTIQUE_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official OnlineBoutique"
-    else
-      if [[ -d "${ROOT_DIR}/manifests/app/onlineboutique" ]]; then
-        for f in "${ROOT_DIR}"/manifests/app/onlineboutique/*.yaml; do
-          istioctl kube-inject -f "${f}" | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for ${f}"
-        done
-      elif [[ -f "${ROOT_DIR}/manifests/app/onlineboutique.yaml" ]]; then
-        istioctl kube-inject -f "${ROOT_DIR}/manifests/app/onlineboutique.yaml" | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for onlineboutique.yaml"
-      else
-        curl -fsSL "${ONLINEBOUTIQUE_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official OnlineBoutique"
-      fi
-    fi
+    curl -fsSL "${ONLINEBOUTIQUE_APP_URL}" | istioctl kube-inject -f - | kubectl apply -n "${NAMESPACE}" -f - || err "Manual injection failed for official OnlineBoutique"
   fi
 
   kubectl rollout restart deployment -n "${NAMESPACE}" || true

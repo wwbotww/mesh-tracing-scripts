@@ -137,34 +137,41 @@ spans_val="$(run_query "${spans_query}" | extract_scalar 2>/dev/null || echo NA)
 bytes_val="$(run_query "${bytes_query}" | extract_scalar 2>/dev/null || echo NA)"
 accepted_spans_val="$(run_query "${accepted_spans_query}" | extract_scalar 2>/dev/null || echo NA)"
 
-cat > "${METRICS_FILE}" <<EOF
-{
-  "collected_at": "${STAMP}",
-  "window_seconds": ${WINDOW},
-  "namespaces": {
-    "observability": "${OBS_NS}",
-    "app": "${APP_NS}"
-  },
-  "queries": {
-    "p95_latency_ms": "${p95_query}",
-    "p99_latency_ms": "${p99_query}",
-    "envoy_cpu_cores_sum": "${envoy_sum_query}",
-    "envoy_cpu_cores_per_pod": "${envoy_pod_query}",
-    "otel_spans_per_sec": "${spans_query}",
-    "otel_bytes_per_sec": "${bytes_query}",
-    "otel_accepted_spans_per_sec": "${accepted_spans_query}"
-  },
-  "results": {
-    "p95_latency_ms": "${p95_val}",
-    "p99_latency_ms": "${p99_val}",
-    "envoy_cpu_cores_sum": "${envoy_sum_val}",
-    "envoy_cpu_cores_per_pod": "${envoy_pod_val}",
-    "otel_spans_per_sec": "${spans_val}",
-    "otel_bytes_per_sec": "${bytes_val}",
-    "otel_accepted_spans_per_sec": "${accepted_spans_val}"
-  }
+export STAMP WINDOW OBS_NS APP_NS \
+  p95_query p99_query envoy_sum_query envoy_pod_query spans_query bytes_query accepted_spans_query \
+  p95_val p99_val envoy_sum_val envoy_pod_val spans_val bytes_val accepted_spans_val
+python3 - <<'PY' > "${METRICS_FILE}"
+import json
+import os
+
+doc = {
+    "collected_at": os.environ["STAMP"],
+    "window_seconds": int(os.environ["WINDOW"]),
+    "namespaces": {
+        "observability": os.environ["OBS_NS"],
+        "app": os.environ["APP_NS"],
+    },
+    "queries": {
+        "p95_latency_ms": os.environ["p95_query"],
+        "p99_latency_ms": os.environ["p99_query"],
+        "envoy_cpu_cores_sum": os.environ["envoy_sum_query"],
+        "envoy_cpu_cores_per_pod": os.environ["envoy_pod_query"],
+        "otel_spans_per_sec": os.environ["spans_query"],
+        "otel_bytes_per_sec": os.environ["bytes_query"],
+        "otel_accepted_spans_per_sec": os.environ["accepted_spans_query"],
+    },
+    "results": {
+        "p95_latency_ms": os.environ["p95_val"],
+        "p99_latency_ms": os.environ["p99_val"],
+        "envoy_cpu_cores_sum": os.environ["envoy_sum_val"],
+        "envoy_cpu_cores_per_pod": os.environ["envoy_pod_val"],
+        "otel_spans_per_sec": os.environ["spans_val"],
+        "otel_bytes_per_sec": os.environ["bytes_val"],
+        "otel_accepted_spans_per_sec": os.environ["accepted_spans_val"],
+    },
 }
-EOF
+print(json.dumps(doc, ensure_ascii=True, indent=2))
+PY
 
 # Config snapshots for policy/fault state
 log "Dumping sampling/fault config snapshots..."

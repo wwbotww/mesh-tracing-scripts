@@ -8,6 +8,8 @@ err() { echo "[ERROR] $*" >&2; exit 1; }
 POLICY=""
 BUDGET="mid"
 NAMESPACE="observability"
+APP=""
+APP_NAMESPACE="mesh-app"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESULTS_DIR="${ROOT_DIR}/results"
 LOG_FILE="${RESULTS_DIR}/sampling.log"
@@ -18,6 +20,7 @@ JAEGER_SERVICE="jaeger-query"
 usage() {
   cat <<'EOF'
 Usage: scripts/04_apply_sampling_policy.sh --policy baseline_head|baseline_tail|ours [--budget low|mid|high] [--namespace observability]
+       [--app bookinfo|onlineboutique] [--app-namespace mesh-app]
 EOF
 }
 
@@ -26,6 +29,8 @@ while [[ $# -gt 0 ]]; do
     --policy) POLICY="${2:-}"; shift 2 ;;
     --budget) BUDGET="${2:-}"; shift 2 ;;
     --namespace) NAMESPACE="${2:-}"; shift 2 ;;
+    --app) APP="${2:-}"; shift 2 ;;
+    --app-namespace) APP_NAMESPACE="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) err "Unknown argument: $1" ;;
   esac
@@ -67,14 +72,31 @@ PF_PID=$!
 trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
 sleep 3
 
-JAEGER_SERVICE_NAME="productpage.mesh-app"
-TRACE_CNT="$(curl -fsS "http://127.0.0.1:16686/api/traces?service=${JAEGER_SERVICE_NAME}&lookback=15m&limit=200" \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))' 2>/dev/null || echo "NA")"
-if [[ "${TRACE_CNT}" == "0" || "${TRACE_CNT}" == "NA" ]]; then
-  JAEGER_SERVICE_NAME="productpage"
-  TRACE_CNT="$(curl -fsS "http://127.0.0.1:16686/api/traces?service=${JAEGER_SERVICE_NAME}&lookback=15m&limit=200" \
-    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))' 2>/dev/null || echo "NA")"
+if [[ -z "${APP}" ]]; then
+  if kubectl -n "${APP_NAMESPACE}" get deploy frontend >/dev/null 2>&1; then
+    APP="onlineboutique"
+  else
+    APP="bookinfo"
+  fi
 fi
+
+if [[ "${APP}" == "onlineboutique" ]]; then
+  JAEGER_CANDIDATES=("frontend.${APP_NAMESPACE}" "frontend")
+else
+  JAEGER_CANDIDATES=("productpage.${APP_NAMESPACE}" "productpage")
+fi
+
+JAEGER_SERVICE_NAME="${JAEGER_CANDIDATES[0]}"
+TRACE_CNT="NA"
+for svc in "${JAEGER_CANDIDATES[@]}"; do
+  cnt="$(curl -fsS "http://127.0.0.1:16686/api/traces?service=${svc}&lookback=15m&limit=200" \
+    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))' 2>/dev/null || echo "NA")"
+  JAEGER_SERVICE_NAME="${svc}"
+  TRACE_CNT="${cnt}"
+  if [[ "${cnt}" != "NA" && "${cnt}" != "0" ]]; then
+    break
+  fi
+done
 
 echo "trace_count_last_15m(service=${JAEGER_SERVICE_NAME}, limit=200): ${TRACE_CNT}"
 echo "check_command:"

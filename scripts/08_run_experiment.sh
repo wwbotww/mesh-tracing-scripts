@@ -174,7 +174,7 @@ ensure_observability
 parse_target
 
 # 2) Apply sampling policy
-bash "${ROOT_DIR}/scripts/04_apply_sampling_policy.sh" --policy "${POLICY}" --budget "${BUDGET}" --namespace "${OBS_NS}"
+bash "${ROOT_DIR}/scripts/04_apply_sampling_policy.sh" --policy "${POLICY}" --budget "${BUDGET}" --namespace "${OBS_NS}" --app "${APP}" --app-namespace "${APP_NS}"
 
 # 3) Start load + warmup
 if [[ -z "${TARGET_URL}" ]]; then

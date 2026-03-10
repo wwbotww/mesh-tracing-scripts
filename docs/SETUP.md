@@ -75,20 +75,40 @@ Validation points:
 - Jaeger UI is reachable
 - Prometheus can query Istio/Envoy metrics (`istio_request_duration*` or `envoy_cluster_*`)
 
-Optional local UI access:
+### Accessing Jaeger, Prometheus, Grafana from your laptop (cluster on a VM)
+
+If the cluster runs on a **remote VM**, use SSH local port forwarding so your browser can reach the UIs. The "Connection refused" message appears when you open `localhost:16686` (or 9090/3000) **before** anything on the VM is listening on those ports — you must start the port-forwards **on the VM** first.
+
+**Step 1 — On your laptop:** open an SSH session with local port forwarding (keep this session open):
 
 ```bash
-# Jaeger UI
+ssh -L 16686:localhost:16686 -L 9090:localhost:9090 -L 3000:localhost:3000 your_user@<VM_IP>
+```
+
+**Step 2 — On the VM (in that SSH session or a second SSH):** start the port-forwards so VM's localhost:16686/9090/3000 are bound:
+
+```bash
+cd /path/to/mesh-tracing-scripts
+bash scripts/port-forward-ui.sh
+```
+
+**Step 3 — On your laptop:** in the browser open:
+
+- Jaeger: http://localhost:16686  
+- Prometheus: http://localhost:9090  
+- Grafana: http://localhost:3000  
+
+To stop the port-forwards on the VM: `bash scripts/port-forward-ui.sh --stop`.
+
+Manual port-forward (if you prefer one per terminal):
+
+```bash
+# Jaeger
 kubectl -n observability port-forward svc/jaeger-query 16686:16686
-# Open http://127.0.0.1:16686
-
-# Prometheus UI (kube-prometheus-stack)
+# Prometheus (another terminal)
 kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 9090:9090
-# Open http://127.0.0.1:9090
-
-# Grafana UI (kube-prometheus-stack)
+# Grafana (another terminal)
 kubectl -n observability port-forward svc/obs-grafana 3000:80
-# Open http://127.0.0.1:3000
 ```
 
 ## 5) Apply Sampling Policy
@@ -224,7 +244,7 @@ Collect per-run outputs in `results/` and compare:
 
 ## TODO Gaps to Complete
 
-- Replace simplified app manifests with full official manifests.
+- Keep app deployment remote-only (official upstream URLs) and avoid local app manifest forks.
 - Wire OTel Collector exporter to Jaeger and/or Tempo.
 - Add Prometheus scrape jobs for Istio proxies and control plane.
 - Add Grafana dashboards for overhead and tail latency decomposition.
