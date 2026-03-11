@@ -1,0 +1,57 @@
+NAMESPACE       NAME                                                    READY   STATUS      RESTARTS       AGE     IP             NODE           NOMINATED NODE   READINESS GATES
+istio-system    istio-egressgateway-74b45df455-98fvh                    1/1     Running     1 (24h ago)    24h     10.244.1.8     minikube-m02   <none>           <none>
+istio-system    istio-ingressgateway-f547fc59c-cp72n                    1/1     Running     1 (24h ago)    24h     10.244.1.3     minikube-m02   <none>           <none>
+istio-system    istiod-f75584cf4-r4fsc                                  1/1     Running     1 (12h ago)    24h     10.244.1.6     minikube-m02   <none>           <none>
+kube-system     coredns-7d764666f9-rqpsz                                1/1     Running     1 (24h ago)    24h     10.244.0.3     minikube       <none>           <none>
+kube-system     etcd-minikube                                           1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     kindnet-g6k68                                           1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     kindnet-wwb4c                                           1/1     Running     1 (24h ago)    24h     192.168.49.3   minikube-m02   <none>           <none>
+kube-system     kube-apiserver-minikube                                 1/1     Running     1 (12h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     kube-controller-manager-minikube                        1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     kube-proxy-9xtw6                                        1/1     Running     1 (24h ago)    24h     192.168.49.3   minikube-m02   <none>           <none>
+kube-system     kube-proxy-jwtpg                                        1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     kube-scheduler-minikube                                 1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+kube-system     storage-provisioner                                     1/1     Running     2 (12h ago)    24h     192.168.49.2   minikube       <none>           <none>
+mesh-app        adservice-7bb8787db5-bsssn                              2/2     Running     0              12h     10.244.1.16    minikube-m02   <none>           <none>
+mesh-app        cartservice-dc9f4fb6d-x8crc                             2/2     Running     0              12h     10.244.0.8     minikube       <none>           <none>
+mesh-app        checkoutservice-6d7ccbb6cf-78rmd                        2/2     Running     0              12h     10.244.0.10    minikube       <none>           <none>
+mesh-app        currencyservice-7f9f695db5-rbzwx                        2/2     Running     2 (179m ago)   12h     10.244.0.7     minikube       <none>           <none>
+mesh-app        details-v1-747787f7c4-htsfv                             2/2     Running     1 (24h ago)    24h     10.244.1.10    minikube-m02   <none>           <none>
+mesh-app        emailservice-58dc4788c5-cv8x6                           2/2     Running     0              12h     10.244.1.21    minikube-m02   <none>           <none>
+mesh-app        frontend-76c94f7cfb-kckws                               2/2     Running     0              12h     10.244.1.18    minikube-m02   <none>           <none>
+mesh-app        loadgen-exp-004347-4n86h                                0/2     Completed   0              24h     <none>         minikube-m02   <none>           <none>
+mesh-app        loadgenerator-69fdddd69d-vfwpf                          2/2     Running     0              12h     10.244.1.15    minikube-m02   <none>           <none>
+mesh-app        paymentservice-7cff85ccd7-sdss9                         2/2     Running     2 (111m ago)   12h     10.244.0.6     minikube       <none>           <none>
+mesh-app        productcatalogservice-54c86d9f79-7hx4l                  2/2     Running     0              12h     10.244.1.19    minikube-m02   <none>           <none>
+mesh-app        productpage-v1-66d788bc7f-9f7qt                         2/2     Running     1 (24h ago)    24h     10.244.1.14    minikube-m02   <none>           <none>
+mesh-app        ratings-v1-798bd9b5d-vg7gx                              2/2     Running     1 (24h ago)    24h     10.244.1.13    minikube-m02   <none>           <none>
+mesh-app        recommendationservice-6d8ddf5d5f-8p7mq                  2/2     Running     0              12h     10.244.1.20    minikube-m02   <none>           <none>
+mesh-app        redis-cart-6899b65948-ctsjt                             2/2     Running     0              12h     10.244.1.17    minikube-m02   <none>           <none>
+mesh-app        reviews-v1-b4745c9bb-hgxtm                              2/2     Running     1 (24h ago)    24h     10.244.1.12    minikube-m02   <none>           <none>
+mesh-app        reviews-v2-6dc77b845d-p44wz                             2/2     Running     1 (24h ago)    24h     10.244.1.11    minikube-m02   <none>           <none>
+mesh-app        reviews-v3-78c8846d54-kj2tt                             2/2     Running     1 (24h ago)    24h     10.244.1.5     minikube-m02   <none>           <none>
+mesh-app        shippingservice-846f8585d7-5b28h                        2/2     Running     0              12h     10.244.0.9     minikube       <none>           <none>
+ob-app          adservice-7bb8787db5-dpt5p                              2/2     Running     0              12h     10.244.1.26    minikube-m02   <none>           <none>
+ob-app          cartservice-dc9f4fb6d-ffswh                             2/2     Running     0              12h     10.244.0.17    minikube       <none>           <none>
+ob-app          checkoutservice-6d7ccbb6cf-zdlpr                        2/2     Running     0              12h     10.244.0.11    minikube       <none>           <none>
+ob-app          currencyservice-7f9f695db5-spznm                        2/2     Running     2 (164m ago)   12h     10.244.0.16    minikube       <none>           <none>
+ob-app          emailservice-58dc4788c5-xjgq9                           2/2     Running     0              12h     10.244.1.22    minikube-m02   <none>           <none>
+ob-app          frontend-76c94f7cfb-vtz6n                               2/2     Running     0              12h     10.244.0.15    minikube       <none>           <none>
+ob-app          loadgen-exp-011304-979h5                                0/2     Completed   0              2m47s   10.244.1.32    minikube-m02   <none>           <none>
+ob-app          loadgen-exp-131219-92cqc                                0/2     Completed   0              12h     10.244.1.28    minikube-m02   <none>           <none>
+ob-app          loadgen-exp-134954-mjqb6                                0/2     Completed   0              11h     10.244.1.30    minikube-m02   <none>           <none>
+ob-app          loadgenerator-69fdddd69d-2t4t5                          2/2     Running     0              12h     10.244.1.23    minikube-m02   <none>           <none>
+ob-app          paymentservice-7cff85ccd7-hng66                         2/2     Running     2 (101m ago)   12h     10.244.0.12    minikube       <none>           <none>
+ob-app          productcatalogservice-54c86d9f79-nfv9q                  2/2     Running     0              12h     10.244.0.14    minikube       <none>           <none>
+ob-app          recommendationservice-6d8ddf5d5f-qkh5d                  2/2     Running     0              12h     10.244.1.24    minikube-m02   <none>           <none>
+ob-app          redis-cart-6899b65948-87b5c                             2/2     Running     0              12h     10.244.0.13    minikube       <none>           <none>
+ob-app          shippingservice-846f8585d7-hsc26                        2/2     Running     0              12h     10.244.1.25    minikube-m02   <none>           <none>
+observability   alertmanager-obs-kube-prometheus-stack-alertmanager-0   2/2     Running     2 (24h ago)    24h     10.244.1.7     minikube-m02   <none>           <none>
+observability   jaeger-7dc86c798f-85zxd                                 1/1     Running     1 (24h ago)    24h     10.244.0.4     minikube       <none>           <none>
+observability   obs-grafana-7d5dcb6bd5-8mnwf                            3/3     Running     0              12h     10.244.0.19    minikube       <none>           <none>
+observability   obs-kube-prometheus-stack-operator-64496c4978-4b4vq     1/1     Running     0              12h     10.244.0.20    minikube       <none>           <none>
+observability   obs-kube-state-metrics-5f4cc9b856-fcxgc                 1/1     Running     1 (24h ago)    24h     10.244.1.9     minikube-m02   <none>           <none>
+observability   obs-prometheus-node-exporter-6c5vm                      1/1     Running     1 (24h ago)    24h     192.168.49.3   minikube-m02   <none>           <none>
+observability   obs-prometheus-node-exporter-znvjs                      1/1     Running     1 (24h ago)    24h     192.168.49.2   minikube       <none>           <none>
+observability   otel-collector-6cd5f4477d-z7nvc                         1/1     Running     0              2m56s   10.244.1.31    minikube-m02   <none>           <none>
+observability   prometheus-obs-kube-prometheus-stack-prometheus-0       2/2     Running     2 (24h ago)    24h     10.244.0.2     minikube       <none>           <none>

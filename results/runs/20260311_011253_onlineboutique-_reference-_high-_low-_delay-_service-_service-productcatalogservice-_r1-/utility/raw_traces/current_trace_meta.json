@@ -1,0 +1,12 @@
+{
+  "run_dir": "/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_011253_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r1-",
+  "entry_service_requested": "frontend.ob-app",
+  "entry_service_used": "frontend.ob-app",
+  "start_us": 1773191656933000,
+  "end_us": 1773191750557000,
+  "limit": 5000,
+  "trace_count": 257,
+  "truncated": false,
+  "status": "ok",
+  "reason": null
+}

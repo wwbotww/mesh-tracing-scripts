@@ -1,0 +1,25 @@
+NAMESPACE       LAST SEEN   TYPE      REASON              OBJECT                                                    MESSAGE
+observability   23m         Warning   Unhealthy           pod/obs-kube-prometheus-stack-operator-64496c4978-4b4vq   Readiness probe failed: Get "https://10.244.0.20:10250/healthz": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+mesh-app        18m         Warning   Unhealthy           pod/currencyservice-7f9f695db5-rbzwx                      Liveness probe failed: Get "http://10.244.0.7:15020/app-health/server/livez": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+observability   2m57s       Normal    ScalingReplicaSet   deployment/otel-collector                                 Scaled up replica set otel-collector-6cd5f4477d from 0 to 1
+observability   2m57s       Normal    SuccessfulCreate    replicaset/otel-collector-6cd5f4477d                      Created pod: otel-collector-6cd5f4477d-z7nvc
+observability   2m57s       Normal    Scheduled           pod/otel-collector-6cd5f4477d-z7nvc                       Successfully assigned observability/otel-collector-6cd5f4477d-z7nvc to minikube-m02
+observability   2m56s       Normal    Started             pod/otel-collector-6cd5f4477d-z7nvc                       Container started
+observability   2m56s       Normal    Created             pod/otel-collector-6cd5f4477d-z7nvc                       Container created
+observability   2m56s       Normal    Pulled              pod/otel-collector-6cd5f4477d-z7nvc                       Container image "otel/opentelemetry-collector-contrib:0.95.0" already present on machine and can be accessed by the pod
+observability   2m55s       Normal    ScalingReplicaSet   deployment/otel-collector                                 Scaled down replica set otel-collector-58854f7598 from 1 to 0
+observability   2m55s       Normal    SuccessfulDelete    replicaset/otel-collector-58854f7598                      Deleted pod: otel-collector-58854f7598-zsgpw
+observability   2m55s       Normal    Killing             pod/otel-collector-58854f7598-zsgpw                       Stopping container otel-collector
+ob-app          2m48s       Normal    SuccessfulCreate    job/loadgen-exp-011304                                    Created pod: loadgen-exp-011304-979h5
+ob-app          2m48s       Normal    Scheduled           pod/loadgen-exp-011304-979h5                              Successfully assigned ob-app/loadgen-exp-011304-979h5 to minikube-m02
+ob-app          2m47s       Normal    Created             pod/loadgen-exp-011304-979h5                              Container created
+ob-app          2m47s       Normal    Pulled              pod/loadgen-exp-011304-979h5                              Container image "docker.io/istio/proxyv2:1.29.0" already present on machine and can be accessed by the pod
+ob-app          2m46s       Normal    Started             pod/loadgen-exp-011304-979h5                              Container started
+ob-app          2m45s       Normal    Started             pod/loadgen-exp-011304-979h5                              Container started
+ob-app          2m45s       Normal    Created             pod/loadgen-exp-011304-979h5                              Container created
+ob-app          2m45s       Normal    Pulled              pod/loadgen-exp-011304-979h5                              Container image "docker.io/istio/proxyv2:1.29.0" already present on machine and can be accessed by the pod
+ob-app          2m43s       Normal    Started             pod/loadgen-exp-011304-979h5                              Container started
+ob-app          2m43s       Normal    Created             pod/loadgen-exp-011304-979h5                              Container created
+ob-app          2m43s       Normal    Pulled              pod/loadgen-exp-011304-979h5                              Container image "fortio/fortio:1.63.0" already present on machine and can be accessed by the pod
+ob-app          41s         Normal    Killing             pod/loadgen-exp-011304-979h5                              Stopping container istio-proxy
+ob-app          36s         Normal    Completed           job/loadgen-exp-011304                                    Job completed

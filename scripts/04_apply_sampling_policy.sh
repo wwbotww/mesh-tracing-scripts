@@ -16,10 +16,13 @@ LOG_FILE="${RESULTS_DIR}/sampling.log"
 CM_NAME="otel-collector-config"
 COLLECTOR_DEPLOY="otel-collector"
 JAEGER_SERVICE="jaeger-query"
+JAEGER_PORT_LOCAL="16688"
+CANONICAL_POLICY=""
+CANONICAL_BUDGET=""
 
 usage() {
   cat <<'EOF'
-Usage: scripts/04_apply_sampling_policy.sh --policy baseline_head|baseline_tail|ours [--budget low|mid|high] [--namespace observability]
+Usage: scripts/04_apply_sampling_policy.sh --policy head|tail|my_policy|reference|no_tracing [--budget low|mid|high|medium] [--namespace observability]
        [--app bookinfo|onlineboutique] [--app-namespace mesh-app]
 EOF
 }
@@ -36,8 +39,30 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ "${POLICY}" =~ ^(baseline_head|baseline_tail|ours)$ ]] || err "--policy must be baseline_head|baseline_tail|ours"
-[[ "${BUDGET}" =~ ^(low|mid|high)$ ]] || err "--budget must be low|mid|high"
+normalize_policy() {
+  case "$1" in
+    baseline_head|head) echo "baseline_head" ;;
+    baseline_tail|tail) echo "baseline_tail" ;;
+    ours|my_policy) echo "ours" ;;
+    reference) echo "reference" ;;
+    no_tracing) echo "no_tracing" ;;
+    *) return 1 ;;
+  esac
+}
+
+normalize_budget() {
+  case "$1" in
+    low) echo "low" ;;
+    mid|medium) echo "mid" ;;
+    high) echo "high" ;;
+    *) return 1 ;;
+  esac
+}
+
+CANONICAL_POLICY="$(normalize_policy "${POLICY}" || true)"
+CANONICAL_BUDGET="$(normalize_budget "${BUDGET}" || true)"
+[[ -n "${CANONICAL_POLICY}" ]] || err "--policy must be baseline_head|baseline_tail|ours|head|tail|my_policy|reference|no_tracing"
+[[ -n "${CANONICAL_BUDGET}" ]] || err "--budget must be low|mid|medium|high"
 
 command -v kubectl >/dev/null 2>&1 || err "kubectl not found"
 command -v curl >/dev/null 2>&1 || err "curl not found"
@@ -48,11 +73,121 @@ echo "==== $(date '+%Y-%m-%d %H:%M:%S') sampling switch ====" >> "${LOG_FILE}"
 exec > >(tee -a "${LOG_FILE}") 2>&1
 set -x
 
-POLICY_FILE="${ROOT_DIR}/manifests/sampling/${POLICY}_${BUDGET}.yaml"
-[[ -f "${POLICY_FILE}" ]] || err "Policy file not found: ${POLICY_FILE}"
+apply_generated_policy() {
+  local generated_policy="$1"
+  local generated_budget="$2"
+  local percentage="100"
+  case "${generated_budget}" in
+    low) percentage="50" ;;
+    mid) percentage="75" ;;
+    high) percentage="100" ;;
+  esac
 
-log "Applying sampling policy ConfigMap for policy=${POLICY}, budget=${BUDGET}"
-kubectl apply -n "${NAMESPACE}" -f "${POLICY_FILE}" || err "Failed to apply ${POLICY_FILE}"
+  if [[ "${generated_policy}" == "reference" ]]; then
+    kubectl apply -n "${NAMESPACE}" -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${CM_NAME}
+  labels:
+    sampling.policy: reference
+    sampling.budget: ${generated_budget}
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      probabilistic_sampler:
+        sampling_percentage: ${percentage}
+      batch:
+        timeout: 1s
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger-collector.${NAMESPACE}.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [probabilistic_sampler, batch]
+          exporters: [otlp/jaeger]
+EOF
+  else
+    kubectl apply -n "${NAMESPACE}" -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${CM_NAME}
+  labels:
+    sampling.policy: no_tracing
+    sampling.budget: ${generated_budget}
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        timeout: 1s
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger-collector.${NAMESPACE}.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/jaeger]
+EOF
+  fi
+}
+
+if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail|ours)$ ]]; then
+  POLICY_FILE="${ROOT_DIR}/manifests/sampling/${CANONICAL_POLICY}_${CANONICAL_BUDGET}.yaml"
+  [[ -f "${POLICY_FILE}" ]] || err "Policy file not found: ${POLICY_FILE}"
+fi
+
+log "Applying sampling policy ConfigMap for policy=${CANONICAL_POLICY}, budget=${CANONICAL_BUDGET}"
+if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail|ours)$ ]]; then
+  kubectl apply -n "${NAMESPACE}" -f "${POLICY_FILE}" || err "Failed to apply ${POLICY_FILE}"
+else
+  apply_generated_policy "${CANONICAL_POLICY}" "${CANONICAL_BUDGET}" || err "Failed to apply generated policy ${CANONICAL_POLICY}"
+fi
+
+TELEMETRY_SAMPLING="100.0"
+if [[ "${CANONICAL_POLICY}" == "no_tracing" ]]; then
+  TELEMETRY_SAMPLING="0.0"
+fi
+
+kubectl apply -n "${APP_NAMESPACE}" -f - <<EOF
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: tracing-default
+spec:
+  tracing:
+  - providers:
+    - name: otel-tracing
+    randomSamplingPercentage: ${TELEMETRY_SAMPLING}
+EOF
 
 log "Rolling restart collector deployment..."
 kubectl -n "${NAMESPACE}" rollout restart deployment/"${COLLECTOR_DEPLOY}" || err "Failed to restart ${COLLECTOR_DEPLOY}"
@@ -66,8 +201,10 @@ kubectl get configmap "${CM_NAME}" -n "${NAMESPACE}" -o go-template='{{index .da
       inproc==1 {print}
     ' || err "Failed to print config summary"
 
+echo "telemetry_sampling_percentage: ${TELEMETRY_SAMPLING}"
+
 log "Simple verification by Jaeger trace count (same traffic, switch budget low/mid/high and compare):"
-kubectl -n "${NAMESPACE}" port-forward svc/"${JAEGER_SERVICE}" 16686:16686 >/tmp/sampling-jaeger-pf.log 2>&1 &
+kubectl -n "${NAMESPACE}" port-forward svc/"${JAEGER_SERVICE}" "${JAEGER_PORT_LOCAL}:16686" >/tmp/sampling-jaeger-pf.log 2>&1 &
 PF_PID=$!
 trap 'kill ${PF_PID:-} >/dev/null 2>&1 || true' EXIT
 sleep 3
@@ -89,7 +226,7 @@ fi
 JAEGER_SERVICE_NAME="${JAEGER_CANDIDATES[0]}"
 TRACE_CNT="NA"
 for svc in "${JAEGER_CANDIDATES[@]}"; do
-  cnt="$(curl -fsS "http://127.0.0.1:16686/api/traces?service=${svc}&lookback=15m&limit=200" \
+  cnt="$(curl -fsS "http://127.0.0.1:${JAEGER_PORT_LOCAL}/api/traces?service=${svc}&lookback=15m&limit=200" \
     | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get("data", [])))' 2>/dev/null || echo "NA")"
   JAEGER_SERVICE_NAME="${svc}"
   TRACE_CNT="${cnt}"
@@ -100,11 +237,15 @@ done
 
 echo "trace_count_last_15m(service=${JAEGER_SERVICE_NAME}, limit=200): ${TRACE_CNT}"
 echo "check_command:"
-echo "curl -fsS \"http://127.0.0.1:16686/api/traces?service=${JAEGER_SERVICE_NAME}&lookback=15m&limit=200\" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get(\"data\", [])))'"
-echo "expected: with same load pattern, low < mid < high (trace count or exported spans/sec)."
+echo "curl -fsS \"http://127.0.0.1:${JAEGER_PORT_LOCAL}/api/traces?service=${JAEGER_SERVICE_NAME}&lookback=15m&limit=200\" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get(\"data\", [])))'"
+if [[ "${CANONICAL_POLICY}" == "no_tracing" ]]; then
+  echo "expected: trace count should stay close to zero because Telemetry sampling is set to 0.0."
+else
+  echo "expected: with same load pattern, low < mid < high (trace count or exported spans/sec)."
+fi
 
 kill "${PF_PID}" >/dev/null 2>&1 || true
 trap - EXIT
 
-log "Sampling policy applied successfully: policy=${POLICY}, budget=${BUDGET}, namespace=${NAMESPACE}"
+log "Sampling policy applied successfully: policy=${CANONICAL_POLICY}, budget=${CANONICAL_BUDGET}, namespace=${NAMESPACE}"
 log "Log file: ${LOG_FILE}"

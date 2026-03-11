@@ -1,0 +1,7 @@
+{
+  "critical_path_edges": [],
+  "reference_edges": [],
+  "jaccard": null,
+  "status": "placeholder",
+  "reason": "critical_path_comparison_not_implemented"
+}

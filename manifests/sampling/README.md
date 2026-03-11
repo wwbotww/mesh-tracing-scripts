@@ -17,6 +17,13 @@ Policy details:
   - status_code = ERROR
   - fallback probabilistic policy
 - `ours`: placeholder "service-granularity dynamic sampling", with per-service sampling rates.
+- `reference`: generated at runtime by `scripts/04_apply_sampling_policy.sh` as a higher-sampling head-based config (no static manifest file).
+- `no_tracing`: generated at runtime by `scripts/04_apply_sampling_policy.sh` and paired with Telemetry sampling `0.0`.
+
+Experiment-facing aliases accepted by `scripts/04_apply_sampling_policy.sh`:
+- `head` -> `baseline_head`
+- `tail` -> `baseline_tail`
+- `my_policy` -> `ours`
 
 Apply with:
 - `bash scripts/04_apply_sampling_policy.sh --policy baseline_head --budget low`

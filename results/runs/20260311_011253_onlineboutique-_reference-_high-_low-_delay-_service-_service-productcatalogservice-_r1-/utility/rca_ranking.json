@@ -1,0 +1,21 @@
+{
+  "run_id": "20260311_011253_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r1-",
+  "reference_run_id": null,
+  "ground_truth": {
+    "target_type": "service",
+    "target": "service=productcatalogservice",
+    "source_service": null,
+    "target_service": "productcatalogservice",
+    "edge": null,
+    "service": "productcatalogservice"
+  },
+  "scoring_method": "simple_edge_weighted_sum_v1",
+  "edge_ranking": [],
+  "service_ranking": [],
+  "edge_top1_hit": null,
+  "edge_top3_hit": null,
+  "service_top1_hit": null,
+  "service_top3_hit": null,
+  "status": "not_applicable",
+  "reason": "current_policy_is_reference"
+}

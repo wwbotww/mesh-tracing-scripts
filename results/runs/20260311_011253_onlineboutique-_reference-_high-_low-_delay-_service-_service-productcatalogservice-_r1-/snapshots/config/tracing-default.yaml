@@ -1,0 +1,17 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"telemetry.istio.io/v1","kind":"Telemetry","metadata":{"annotations":{},"name":"tracing-default","namespace":"ob-app"},"spec":{"tracing":[{"providers":[{"name":"otel-tracing"}],"randomSamplingPercentage":100}]}}
+  creationTimestamp: "2026-03-10T13:09:14Z"
+  generation: 1
+  name: tracing-default
+  namespace: ob-app
+  resourceVersion: "6579"
+  uid: 2b400ee7-3a7e-4522-8ad4-60c070cde222
+spec:
+  tracing:
+  - providers:
+    - name: otel-tracing
+    randomSamplingPercentage: 100

@@ -116,10 +116,20 @@ kubectl -n observability port-forward svc/obs-grafana 3000:80
 Examples:
 
 ```bash
-bash scripts/04_apply_sampling_policy.sh --policy baseline_head --budget mid
-bash scripts/04_apply_sampling_policy.sh --policy baseline_tail --budget low
-bash scripts/04_apply_sampling_policy.sh --policy ours --budget high
+bash scripts/04_apply_sampling_policy.sh --policy head --budget medium
+bash scripts/04_apply_sampling_policy.sh --policy tail --budget low
+bash scripts/04_apply_sampling_policy.sh --policy my_policy --budget high
+bash scripts/04_apply_sampling_policy.sh --policy reference --budget high
+bash scripts/04_apply_sampling_policy.sh --policy no_tracing --budget low
 ```
+
+Canonical policy aliases:
+
+- `head` -> `baseline_head`
+- `tail` -> `baseline_tail`
+- `my_policy` -> `ours`
+- `reference` -> high-sampling reference config
+- `no_tracing` -> Telemetry sampling `0.0`
 
 Validation points:
 
@@ -172,13 +182,16 @@ Validation points:
 ## 8) Collect Metrics and Snapshots
 
 ```bash
-bash scripts/07_collect_metrics.sh --obs-namespace observability --app-namespace mesh-app
+bash scripts/07_collect_metrics.sh \
+  --obs-namespace observability \
+  --app-namespace mesh-app \
+  --output-dir results/runs/manual_run_001
 ```
 
 Validation points:
 
-- new folder created under `results/<timestamp>/`
-- files include `pods_all.txt`, `events.txt`, `virtualservices.txt`, etc.
+- new folder created under `results/runs/<run_id>/`
+- files include `cost_metrics.json`, `metrics_raw/*.json`, `snapshots/cluster/*`, `snapshots/config/*`
 
 ## 9) Cleanup
 
@@ -204,12 +217,14 @@ Example command:
 ```bash
 bash scripts/08_run_experiment.sh \
   --app bookinfo \
-  --policy baseline_tail \
-  --budget mid \
-  --fault delay \
-  --target productpage->reviews \
+  --policy tail \
+  --budget medium \
+  --fault-type delay \
+  --fault-target edge=productpage->reviews \
+  --load-level medium \
   --rps 200 \
-  --duration 300
+  --duration 300 \
+  --repeat-id 1
 ```
 
 What it does:
@@ -219,20 +234,59 @@ What it does:
 - starts load and warms up 60s
 - injects fault during middle 60% of experiment duration
 - clears fault and collects metrics
+- writes `run_context.json`, `summary.json`, `utility/*.json`, `metrics_raw/*.json`
+- appends one row to `results/index.jsonl`
 - prints final result directory path
 
 Main logs:
 
 - driver log: `results/exp_driver.log`
 - latest result dir pointer: `results/last_experiment_dir.txt`
+- structured index: `results/index.jsonl`
+
+Result directory layout:
+
+```text
+results/runs/<run_id>/
+  run_context.json
+  summary.json
+  cost_metrics.json
+  metrics.json
+  metrics_raw/
+  load/
+  fault/
+  utility/
+  snapshots/
+```
+
+## 11) Matrix Experiment Driver
+
+Example spec:
+
+```bash
+cat experiments/mvp_matrix.json
+```
+
+Run the matrix:
+
+```bash
+bash scripts/09_run_matrix.sh --spec experiments/mvp_matrix.json
+```
+
+Outputs:
+
+- `results/matrix_runs/<matrix_id>/expanded_runs.jsonl`
+- `results/matrix_runs/<matrix_id>/runs.jsonl`
+- `results/matrix_runs/<matrix_id>/matrix_summary.json`
+- each successful run still writes into `results/runs/<run_id>/`
 
 ## Recommended Experiment Matrix
 
 For your thesis focus ("tracing overhead control and reduction"), run:
 
 1. app: `bookinfo` and `onlineboutique`
-2. policy: `baseline_head`, `baseline_tail`, `ours`
-3. budget: `low`, `mid`, `high`
+2. policy: `no_tracing`, `head`, `tail`, `my_policy`, `reference`
+3. budget: `low`, `medium`, `high`
 4. fault: none / `delay` / `abort`
 
 Collect per-run outputs in `results/` and compare:
@@ -241,6 +295,7 @@ Collect per-run outputs in `results/` and compare:
 - error rate
 - trace volume (spans/sec)
 - control-plane and data-plane overhead (CPU/memory)
+- utility placeholders: `utility/rca_ranking.json`, `utility/critical_path.json`
 
 ## TODO Gaps to Complete
 

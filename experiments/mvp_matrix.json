@@ -1,0 +1,37 @@
+{
+  "app": "bookinfo",
+  "policies": ["reference", "no_tracing", "head", "tail", "my_policy"],
+  "budgets": ["low", "medium", "high"],
+  "load_levels": {
+    "low": 50,
+    "medium": 200,
+    "high": 500
+  },
+  "faults": [
+    {
+      "type": "none"
+    },
+    {
+      "type": "delay",
+      "target_type": "service",
+      "targets": ["service=reviews"],
+      "fixed_delay_ms": 500,
+      "percentage": 50
+    },
+    {
+      "type": "abort",
+      "target_type": "service",
+      "targets": ["service=reviews"],
+      "http_status": 500,
+      "percentage": 20
+    }
+  ],
+  "duration_seconds": 120,
+  "repeats": 1,
+  "namespaces": {
+    "app": "mesh-app",
+    "observability": "observability",
+    "istio": "istio-system"
+  },
+  "notes": "MVP matrix spec with utility placeholders and structured result output."
+}
