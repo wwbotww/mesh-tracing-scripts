@@ -1,0 +1,109 @@
+{"ts":1773244153.724250,"level":"info","r":1,"file":"scli.go","line":124,"msg":"Starting","command":"Φορτίο","version":"1.63.0 h1:fLmroswjKXbqFSsdJin2gAXabgLiNybDA3NTB/RjhpU= go1.21.5 amd64 linux","go-max-procs":4}
+Fortio 1.63.0 running at 50 queries per second, 4->4 procs, for 2m0s: http://192.168.49.2:30301/
+{"ts":1773244153.729680,"level":"info","r":1,"file":"httprunner.go","line":121,"msg":"Starting http test","run":0,"url":"http://192.168.49.2:30301/","threads":4,"qps":"50.0","warmup":"parallel","conn-reuse":""}
+Starting at 50 qps with 4 thread(s) [gomax 4] for 2m0s : 1500 calls each (total 6000)
+{"ts":1773244163.937942,"level":"info","r":22,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":55402,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":3,"run":0}
+{"ts":1773244163.951434,"level":"info","r":21,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":55460,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":2,"run":0}
+{"ts":1773244164.345489,"level":"info","r":20,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":55414,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":1,"run":0}
+{"ts":1773244165.165074,"level":"info","r":19,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":55396,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":0,"run":0}
+{"ts":1773244166.957983,"level":"err","r":22,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51372,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":3,"run":0}
+{"ts":1773244167.010667,"level":"err","r":21,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51384,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":2,"run":0}
+{"ts":1773244167.447635,"level":"err","r":20,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51402,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":1,"run":0}
+{"ts":1773244168.688915,"level":"err","r":19,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51428,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":0,"run":0}
+{"ts":1773244170.161175,"level":"err","r":22,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51444,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":3,"run":0}
+{"ts":1773244170.161512,"level":"err","r":21,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51464,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":2,"run":0}
+{"ts":1773244170.468997,"level":"err","r":20,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51472,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":1,"run":0}
+{"ts":1773244171.722898,"level":"err","r":19,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51490,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":0,"run":0}
+{"ts":1773244173.345568,"level":"err","r":22,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51506,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":3,"run":0}
+{"ts":1773244173.407354,"level":"err","r":21,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":51510,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":2,"run":0}
+{"ts":1773244173.543033,"level":"err","r":20,"file":"http_client.go","line":1091,"msg":"Read error","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47660,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"size":0,"dest":{"IP":"192.168.49.2","Port":30301,"Zone":""},"url":"http://192.168.49.2:30301/","thread":1,"run":0}
+{"ts":1773244179.243983,"level":"info","r":21,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47710,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":2,"run":0}
+{"ts":1773244179.244073,"level":"info","r":22,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47692,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":3,"run":0}
+{"ts":1773244179.244509,"level":"info","r":20,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47732,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":1,"run":0}
+{"ts":1773244184.303159,"level":"info","r":19,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47676,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":0,"run":0}
+{"ts":1773244184.303251,"level":"info","r":20,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47762,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":1,"run":0}
+{"ts":1773244184.535836,"level":"info","r":21,"file":"http_client.go","line":1077,"msg":"Closing dead socket (err at first read)","err":{"Op":"read","Net":"tcp","Source":{"IP":"10.244.1.60","Port":47788,"Zone":""},"Addr":{"IP":"192.168.49.2","Port":30301,"Zone":""},"Err":{}},"thread":2,"run":0}
+{"ts":1773244274.518282,"level":"warn","r":19,"file":"periodic.go","line":781,"msg":"T000 warning only did 219 out of 1500 calls before reaching 2m0s"}
+{"ts":1773244274.518367,"level":"info","r":19,"file":"periodic.go","line":850,"msg":"T000 ended after 2m0.073196385s : 219 calls. qps=1.8238874835796268"}
+{"ts":1773244274.715215,"level":"warn","r":22,"file":"periodic.go","line":781,"msg":"T003 warning only did 237 out of 1500 calls before reaching 2m0s"}
+{"ts":1773244274.715395,"level":"info","r":22,"file":"periodic.go","line":850,"msg":"T003 ended after 2m0.270220552s : 237 calls. qps=1.9705626123594806"}
+{"ts":1773244274.746422,"level":"warn","r":20,"file":"periodic.go","line":781,"msg":"T001 warning only did 218 out of 1500 calls before reaching 2m0s"}
+{"ts":1773244274.747241,"level":"info","r":20,"file":"periodic.go","line":850,"msg":"T001 ended after 2m0.302060902s : 218 calls. qps=1.8121052820332506"}
+{"ts":1773244274.746313,"level":"warn","r":21,"file":"periodic.go","line":781,"msg":"T002 warning only did 224 out of 1500 calls before reaching 2m0s"}
+{"ts":1773244274.749913,"level":"info","r":21,"file":"periodic.go","line":850,"msg":"T002 ended after 2m0.3047013s : 224 calls. qps=1.8619388733730224"}
+Ended after 2m0.308173933s : 898 calls. qps=7.4642
+{"ts":1773244274.753989,"level":"info","r":1,"file":"periodic.go","line":581,"msg":"Run ended","run":0,"elapsed":120308173933,"calls":898,"qps":7.464164492265496}
+Aggregated Sleep Time : count 898 avg -65.907631 +/- 24.93 min -102.84884549 max -0.671814427 sum -59185.0529
+# range, mid point, percentile, count
+>= -102.849 <= -0.671814 , -51.7603 , 100.00, 898
+# target 50% -51.8173
+WARNING 100.00% of sleep were falling behind
+Aggregated Function Time : count 898 avg 0.53543575 +/- 0.6565 min 0.143088637 max 6.60281295 sum 480.821301
+# range, mid point, percentile, count
+>= 0.143089 <= 0.16 , 0.151544 , 0.11, 1
+> 0.16 <= 0.18 , 0.17 , 0.78, 6
+> 0.18 <= 0.2 , 0.19 , 2.34, 14
+> 0.2 <= 0.25 , 0.225 , 11.58, 83
+> 0.25 <= 0.3 , 0.275 , 26.28, 132
+> 0.3 <= 0.35 , 0.325 , 41.31, 135
+> 0.35 <= 0.4 , 0.375 , 54.45, 118
+> 0.4 <= 0.45 , 0.425 , 62.81, 75
+> 0.45 <= 0.5 , 0.475 , 69.49, 60
+> 0.5 <= 0.6 , 0.55 , 80.73, 101
+> 0.6 <= 0.7 , 0.65 , 86.64, 53
+> 0.7 <= 0.8 , 0.75 , 91.31, 42
+> 0.8 <= 0.9 , 0.85 , 93.88, 23
+> 0.9 <= 1 , 0.95 , 94.88, 9
+> 1 <= 2 , 1.5 , 97.33, 22
+> 2 <= 3 , 2.5 , 98.00, 6
+> 3 <= 4 , 3.5 , 98.89, 8
+> 5 <= 6.60281 , 5.80141 , 100.00, 10
+# target 50% 0.383051
+# target 75% 0.54901
+# target 90% 0.771905
+# target 99% 5.16349
+# target 99.9% 6.45888
+Error cases : count 11 avg 4.2467567 +/- 1.485 min 3.020965337 max 6.60281295 sum 46.7143235
+# range, mid point, percentile, count
+>= 3.02097 <= 4 , 3.51048 , 63.64, 7
+> 5 <= 6.60281 , 5.80141 , 100.00, 4
+# target 50% 3.75524
+# target 75% 5.50088
+# target 90% 6.16204
+# target 99% 6.55874
+# target 99.9% 6.59841
+# Socket and IP used for each connection:
+[0]   5 socket used, resolved to 192.168.49.2:30301, connection timing : count 5 avg 0.10956756 +/- 0.1886 min 0.000210806 max 0.486172911 sum 0.547837817
+[1]   7 socket used, resolved to 192.168.49.2:30301, connection timing : count 7 avg 0.049542657 +/- 0.08486 min 0.000433106 max 0.251130224 sum 0.346798599
+[2]   7 socket used, resolved to 192.168.49.2:30301, connection timing : count 7 avg 0.029201252 +/- 0.04703 min 0.000720364 max 0.134178498 sum 0.204408766
+[3]   6 socket used, resolved to 192.168.49.2:30301, connection timing : count 6 avg 0.020153433 +/- 0.01719 min 0.004617123 max 0.05063846 sum 0.1209206
+Connection time histogram (s) : count 25 avg 0.048798631 +/- 0.1042 min 0.000210806 max 0.486172911 sum 1.21996578
+# range, mid point, percentile, count
+>= 0.000210806 <= 0.001 , 0.000605403 , 16.00, 4
+> 0.001 <= 0.002 , 0.0015 , 24.00, 2
+> 0.002 <= 0.003 , 0.0025 , 28.00, 1
+> 0.004 <= 0.005 , 0.0045 , 40.00, 3
+> 0.005 <= 0.006 , 0.0055 , 52.00, 3
+> 0.007 <= 0.008 , 0.0075 , 56.00, 1
+> 0.016 <= 0.018 , 0.017 , 60.00, 1
+> 0.02 <= 0.025 , 0.0225 , 68.00, 2
+> 0.03 <= 0.035 , 0.0325 , 76.00, 2
+> 0.05 <= 0.06 , 0.055 , 84.00, 2
+> 0.06 <= 0.07 , 0.065 , 88.00, 1
+> 0.12 <= 0.14 , 0.13 , 92.00, 1
+> 0.25 <= 0.3 , 0.275 , 96.00, 1
+> 0.45 <= 0.486173 , 0.468086 , 100.00, 1
+# target 50% 0.00583333
+# target 75% 0.034375
+# target 90% 0.13
+# target 99% 0.47713
+# target 99.9% 0.485269
+Sockets used: 25 (for perfect keepalive, would be 4)
+Uniform: false, Jitter: false, Catchup allowed: true
+IP addresses distribution:
+192.168.49.2:30301: 25
+Code  -1 : 11 (1.2 %)
+Code 200 : 887 (98.8 %)
+Response Header Sizes : count 898 avg 259.81737 +/- 28.93 min 0 max 264 sum 233316
+Response Body/Total Sizes : count 898 avg 10820.019 +/- 1205 min 0 max 10966 sum 9716377
+All done 898 calls (plus 4 warmup) 535.436 ms avg, 7.5 qps

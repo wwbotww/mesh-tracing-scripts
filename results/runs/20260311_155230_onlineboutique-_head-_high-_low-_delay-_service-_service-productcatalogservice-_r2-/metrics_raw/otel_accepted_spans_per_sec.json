@@ -1,0 +1,1 @@
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1773244534.298,"205.33333333333331"]}]},"infos":["PromQL info: metric might not be a counter, name does not end in _total/_sum/_count/_bucket: \"otelcol_receiver_accepted_spans\" (1:10)"]}

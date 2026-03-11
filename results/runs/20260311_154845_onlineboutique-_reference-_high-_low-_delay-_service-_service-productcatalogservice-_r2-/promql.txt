@@ -1,0 +1,10 @@
+# Window used for rate calculations: 60s
+p50_latency_ms = histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload_namespace="ob-app"}[60s])) by (le))
+p95_latency_ms = histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload_namespace="ob-app"}[60s])) by (le))
+p99_latency_ms = histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{reporter="destination",destination_workload_namespace="ob-app"}[60s])) by (le))
+error_rate = sum(rate(istio_requests_total{reporter="destination",destination_workload_namespace="ob-app",response_code=~"5.."}[60s])) / clamp_min(sum(rate(istio_requests_total{reporter="destination",destination_workload_namespace="ob-app"}[60s])), 0.0001)
+envoy_cpu_cores_sum = sum(rate(container_cpu_usage_seconds_total{namespace="ob-app",container="istio-proxy"}[60s]))
+envoy_cpu_cores_per_pod = sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="ob-app",container="istio-proxy"}[60s]))
+otel_spans_per_sec = sum(rate(otelcol_exporter_sent_spans{service_instance_id=~".*"}[60s]))
+otel_bytes_per_sec = sum(rate(otelcol_exporter_sent_bytes{service_instance_id=~".*"}[60s]))
+otel_accepted_spans_per_sec = sum(rate(otelcol_receiver_accepted_spans{service_instance_id=~".*"}[60s]))

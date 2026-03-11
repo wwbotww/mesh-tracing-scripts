@@ -804,3 +804,809 @@ Prometheus query (error rate): sum(rate(istio_requests_total{destination_service
 + log 'Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
 + echo '[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
 [INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log
+==== 2026-03-11 15:50:18 fault operation ====
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2- ]]
++ case "${OUTPUT_DIR}" in
++ FAULT_DIR=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ mkdir -p /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ kubectl get svc productcatalogservice -n ob-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:30301/ ]]
++ before_p95=NA
++ before_err=NA
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 19092:9090
++ PROM_PF_PID=749844
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ P95_QUERY='histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ ERR_QUERY='sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ BEFORE_P95_FILE=
++ BEFORE_ERR_FILE=
++ AFTER_P95_FILE=
++ AFTER_ERR_FILE=
++ RENDERED_FILE=
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ BEFORE_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json
++ BEFORE_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json
++ AFTER_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json
++ AFTER_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json
++ RENDERED_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ before_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml ]]
++ cat
++ kubectl apply -n ob-app -f /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
+virtualservice.networking.istio.io/fault-delay-any-to-productcatalogservice created
++ kubectl get virtualservice fault-delay-any-to-productcatalogservice -n ob-app
+NAME                                       GATEWAYS   HOSTS                       AGE
+fault-delay-any-to-productcatalogservice              ["productcatalogservice"]   1s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ after_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=1
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=2
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=3
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=4
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=5
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=6
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=7
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=8
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=9
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=10
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=11
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=12
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=13
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=14
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=15
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=16
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=17
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=18
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=19
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productcatalogservice'
+Fault name: fault-delay-any-to-productcatalogservice
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: ob-app'
+Namespace: ob-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productcatalogservice'
+Target service: productcatalogservice
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 20/0'
+Curl success/fail (20 req): 20/0
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ python3 - /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_summary.json fault-delay-any-to-productcatalogservice apply delay ob-app '' productcatalogservice 200 500 10 http://192.168.49.2:30301/ NA NA NA NA 20 0 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))' 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)' /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
++ kill 749844
++ trap - EXIT
++ log 'Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
+[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log
+==== 2026-03-11 15:51:29 fault operation ====
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2- ]]
++ case "${OUTPUT_DIR}" in
++ FAULT_DIR=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ mkdir -p /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ kubectl get svc productcatalogservice -n ob-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:30301/ ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=750672
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 19092:9090
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ P95_QUERY='histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ ERR_QUERY='sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ BEFORE_P95_FILE=
++ BEFORE_ERR_FILE=
++ AFTER_P95_FILE=
++ AFTER_ERR_FILE=
++ RENDERED_FILE=
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ BEFORE_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json
++ BEFORE_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json
++ AFTER_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json
++ AFTER_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json
++ RENDERED_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_fault-delay-any-to-productcatalogservice.yaml
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productcatalogservice -n ob-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productcatalogservice" deleted from ob-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=1
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=2
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=3
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=4
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=5
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=6
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=7
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=8
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=9
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=10
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=11
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=12
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=13
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=14
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=15
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=16
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=17
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=18
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=19
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productcatalogservice'
+Fault name: fault-delay-any-to-productcatalogservice
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: ob-app'
+Namespace: ob-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productcatalogservice'
+Target service: productcatalogservice
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 20/0'
+Curl success/fail (20 req): 20/0
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ python3 - /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_summary.json fault-delay-any-to-productcatalogservice clear delay ob-app '' productcatalogservice 200 500 10 http://192.168.49.2:30301/ NA NA NA NA 20 0 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))' 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)' /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_fault-delay-any-to-productcatalogservice.yaml
++ kill 750672
++ trap - EXIT
++ log 'Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
+[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log
+==== 2026-03-11 15:53:52 fault operation ====
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2- ]]
++ case "${OUTPUT_DIR}" in
++ FAULT_DIR=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ mkdir -p /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ kubectl get svc productcatalogservice -n ob-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:30301/ ]]
++ before_p95=NA
++ before_err=NA
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 19092:9090
++ PROM_PF_PID=753037
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ P95_QUERY='histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ ERR_QUERY='sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ BEFORE_P95_FILE=
++ BEFORE_ERR_FILE=
++ AFTER_P95_FILE=
++ AFTER_ERR_FILE=
++ RENDERED_FILE=
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ BEFORE_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json
++ BEFORE_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json
++ AFTER_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json
++ AFTER_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json
++ RENDERED_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ [[ true == true ]]
++ [[ -z '' ]]
++ [[ delay == \d\e\l\a\y ]]
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml ]]
++ cat
++ kubectl apply -n ob-app -f /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
+virtualservice.networking.istio.io/fault-delay-any-to-productcatalogservice created
++ kubectl get virtualservice fault-delay-any-to-productcatalogservice -n ob-app
+NAME                                       GATEWAYS   HOSTS                       AGE
+fault-delay-any-to-productcatalogservice              ["productcatalogservice"]   0s
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ after_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=1
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=2
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=3
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=4
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=5
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=6
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=7
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=8
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=9
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=10
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=11
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=12
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=13
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=14
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=15
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=16
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=17
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=18
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=19
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=20
+++ [[ true == true ]]
+++ echo apply
++ echo 'Fault action: apply'
+Fault action: apply
++ echo 'Fault name: fault-delay-any-to-productcatalogservice'
+Fault name: fault-delay-any-to-productcatalogservice
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: ob-app'
+Namespace: ob-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productcatalogservice'
+Target service: productcatalogservice
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 20/0'
+Curl success/fail (20 req): 20/0
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ python3 - /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_summary.json fault-delay-any-to-productcatalogservice apply delay ob-app '' productcatalogservice 200 500 10 http://192.168.49.2:30301/ NA NA NA NA 20 0 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))' 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)' /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_before_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_after_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/apply_fault-delay-any-to-productcatalogservice.yaml
++ kill 753037
++ trap - EXIT
++ log 'Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
+[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log
+==== 2026-03-11 15:55:00 fault operation ====
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2- ]]
++ case "${OUTPUT_DIR}" in
++ FAULT_DIR=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ mkdir -p /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault
++ kubectl get svc productcatalogservice -n ob-app
++ [[ -n '' ]]
++ [[ -z http://192.168.49.2:30301/ ]]
++ before_p95=NA
++ before_err=NA
++ PROM_PF_PID=753799
++ kubectl -n observability port-forward svc/obs-kube-prometheus-stack-prometheus 19092:9090
++ trap 'kill ${PROM_PF_PID:-} >/dev/null 2>&1 || true' EXIT
++ sleep 3
++ P95_QUERY='histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ ERR_QUERY='sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ BEFORE_P95_FILE=
++ BEFORE_ERR_FILE=
++ AFTER_P95_FILE=
++ AFTER_ERR_FILE=
++ RENDERED_FILE=
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ BEFORE_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json
++ BEFORE_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json
++ AFTER_P95_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json
++ AFTER_ERR_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json
++ RENDERED_FILE=/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_fault-delay-any-to-productcatalogservice.yaml
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ before_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ before_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ [[ false == true ]]
++ kubectl delete virtualservice fault-delay-any-to-productcatalogservice -n ob-app --ignore-not-found
+virtualservice.networking.istio.io "fault-delay-any-to-productcatalogservice" deleted from ob-app namespace
++ sleep 20
++ after_p95=NA
++ after_err=NA
+++ query_prom 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
++ p95_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_p95=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ query_prom 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
++ err_json2='{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ printf %s '{"status":"success","data":{"resultType":"vector","result":[]}}'
+++ extract_prom_value
++ after_err=NA
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json ]]
++ printf '%s\n' '{"status":"success","data":{"resultType":"vector","result":[]}}'
++ log 'Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
++ echo '[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/'
+[INFO] Simple runtime check via curl (inside cluster DNS): http://192.168.49.2:30301/
++ ok=0
++ fail=0
+++ seq 1 20
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=1
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=2
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=3
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=4
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=5
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=6
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=7
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=8
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=9
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=10
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=11
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=12
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=13
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=14
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=15
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=16
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=17
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=18
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=19
++ for _ in $(seq 1 20)
+++ curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://192.168.49.2:30301/
++ code=200
++ [[ 200 =~ ^2|3|4 ]]
++ ok=20
+++ [[ false == true ]]
+++ echo clear
++ echo 'Fault action: clear'
+Fault action: clear
++ echo 'Fault name: fault-delay-any-to-productcatalogservice'
+Fault name: fault-delay-any-to-productcatalogservice
++ echo 'Fault type: delay'
+Fault type: delay
++ echo 'Namespace: ob-app'
+Namespace: ob-app
++ echo 'Source service: any'
+Source service: any
++ echo 'Target service: productcatalogservice'
+Target service: productcatalogservice
++ echo 'Prometheus P95 before/after: NA -> NA'
+Prometheus P95 before/after: NA -> NA
++ echo 'Prometheus error_rate before/after: NA -> NA'
+Prometheus error_rate before/after: NA -> NA
++ echo 'Curl success/fail (20 req): 20/0'
+Curl success/fail (20 req): 20/0
++ echo 'Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))'
+Prometheus query (P95): histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))
++ echo 'Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)'
+Prometheus query (error rate): sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)
++ [[ -n /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault ]]
++ python3 - /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_summary.json fault-delay-any-to-productcatalogservice clear delay ob-app '' productcatalogservice 200 500 10 http://192.168.49.2:30301/ NA NA NA NA 20 0 'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="productcatalogservice"}[2m])) by (le))' 'sum(rate(istio_requests_total{destination_service_name="productcatalogservice",response_code=~"5.."}[2m])) / clamp_min(sum(rate(istio_requests_total{destination_service_name="productcatalogservice"}[2m])), 0.0001)' /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_p95.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_before_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_after_error_rate.json /home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/fault/clear_fault-delay-any-to-productcatalogservice.yaml
++ kill 753799
++ trap - EXIT
++ log 'Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
++ echo '[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log'
+[INFO] Fault operation completed. Log file: /home/shaohui.young/mesh-tracing-scripts/results/fault.log

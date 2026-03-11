@@ -1,0 +1,41 @@
+{
+  "run_id": "20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-",
+  "app": "onlineboutique",
+  "policy": {
+    "requested": "head",
+    "canonical": "head",
+    "budget_requested": "high",
+    "budget_canonical": "high",
+    "policy_impl_status": "implemented"
+  },
+  "load": {
+    "level": "low",
+    "requested_rps": 50,
+    "duration_seconds": 60,
+    "target_url": "http://192.168.49.2:30301/"
+  },
+  "fault": {
+    "type": "delay",
+    "target_type": "service",
+    "target": "service=productcatalogservice",
+    "source_service": null,
+    "target_service": "productcatalogservice",
+    "fixed_delay_ms": 200,
+    "http_status": 500,
+    "percentage": 10
+  },
+  "namespaces": {
+    "app": "ob-app",
+    "observability": "observability",
+    "istio": "istio-system"
+  },
+  "repeat_id": "2",
+  "notes": null,
+  "timestamps": {
+    "run_start_epoch_ms": 1773244346886,
+    "load_start_epoch_ms": 1773244359939,
+    "fault_apply_epoch_ms": 1773244432264,
+    "fault_clear_epoch_ms": 1773244528378,
+    "run_end_epoch_ms": 1773244528969
+  }
+}

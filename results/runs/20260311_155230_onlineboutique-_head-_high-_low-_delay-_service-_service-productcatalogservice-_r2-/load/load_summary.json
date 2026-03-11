@@ -1,0 +1,29 @@
+{
+  "target_url": "http://192.168.49.2:30301/",
+  "requested_qps": 50.0,
+  "achieved_qps": 13.1,
+  "duration_seconds": 120.033995003,
+  "total_calls": 1577,
+  "warmup_calls": 4,
+  "average_latency_ms": 304.257,
+  "latency_ms": {
+    "p50": 262.933,
+    "p75": 311.655,
+    "p90": 392.5,
+    "p95": null,
+    "p99": 1264.37,
+    "p999": 5799.67
+  },
+  "status_codes": {
+    "200": 1573
+  },
+  "http_success_rate": 1.0,
+  "http_error_rate": 0.0,
+  "error_cases": "count 4 avg 6.2578767 +/- 0.03897 min 6.222312799 max 6.320128084 sum 25.0315066",
+  "raw_log": "/home/shaohui.young/mesh-tracing-scripts/results/runs/20260311_155230_onlineboutique-_head-_high-_low-_delay-_service-_service-productcatalogservice-_r2-/load/fortio_stdout.log",
+  "job_name": "loadgen-exp-155239",
+  "app": "onlineboutique",
+  "namespace": "ob-app",
+  "requested_rps": 50,
+  "requested_duration_seconds": 120
+}

@@ -707,6 +707,11 @@ python3 "${ROOT_DIR}/scripts/compute_rca.py" \
   --current-traces "${OUT_DIR}/utility/raw_traces/current_traces.json" \
   "${REFERENCE_TRACE_ARGS[@]}"
 
+python3 "${ROOT_DIR}/scripts/compute_critical_path.py" \
+  --run-dir "${OUT_DIR}" \
+  --current-traces "${OUT_DIR}/utility/raw_traces/current_traces.json" \
+  "${REFERENCE_TRACE_ARGS[@]}"
+
 kill "${JAEGER_PF_PID}" >/dev/null 2>&1 || true
 JAEGER_PF_PID=""
 

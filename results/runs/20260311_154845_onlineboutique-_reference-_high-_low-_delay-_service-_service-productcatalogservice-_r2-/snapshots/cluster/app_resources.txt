@@ -1,0 +1,46 @@
+NAME                                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/adservice               1/1     1            1           26h
+deployment.apps/cartservice             1/1     1            1           26h
+deployment.apps/checkoutservice         1/1     1            1           26h
+deployment.apps/currencyservice         1/1     1            1           26h
+deployment.apps/emailservice            1/1     1            1           26h
+deployment.apps/frontend                1/1     1            1           26h
+deployment.apps/loadgenerator           1/1     1            1           26h
+deployment.apps/paymentservice          1/1     1            1           26h
+deployment.apps/productcatalogservice   1/1     1            1           26h
+deployment.apps/recommendationservice   1/1     1            1           26h
+deployment.apps/redis-cart              1/1     1            1           26h
+deployment.apps/shippingservice         1/1     1            1           26h
+
+NAME                            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+service/adservice               ClusterIP      10.100.89.92     <none>        9555/TCP       26h
+service/cartservice             ClusterIP      10.97.94.110     <none>        7070/TCP       26h
+service/checkoutservice         ClusterIP      10.100.212.187   <none>        5050/TCP       26h
+service/currencyservice         ClusterIP      10.105.33.252    <none>        7000/TCP       26h
+service/emailservice            ClusterIP      10.110.230.18    <none>        5000/TCP       26h
+service/frontend                ClusterIP      10.98.128.50     <none>        80/TCP         26h
+service/frontend-external       LoadBalancer   10.97.19.192     <pending>     80:31514/TCP   26h
+service/paymentservice          ClusterIP      10.106.222.6     <none>        50051/TCP      26h
+service/productcatalogservice   ClusterIP      10.104.177.223   <none>        3550/TCP       26h
+service/recommendationservice   ClusterIP      10.110.38.221    <none>        8080/TCP       26h
+service/redis-cart              ClusterIP      10.106.58.37     <none>        6379/TCP       26h
+service/shippingservice         ClusterIP      10.103.23.46     <none>        50051/TCP      26h
+
+NAME                                         READY   STATUS      RESTARTS        AGE
+pod/adservice-7bb8787db5-dpt5p               2/2     Running     2 (3m41s ago)   26h
+pod/cartservice-dc9f4fb6d-ffswh              2/2     Running     6 (6m15s ago)   26h
+pod/checkoutservice-6d7ccbb6cf-zdlpr         2/2     Running     6 (6m21s ago)   26h
+pod/currencyservice-7f9f695db5-spznm         2/2     Running     8 (6m8s ago)    26h
+pod/emailservice-58dc4788c5-xjgq9            2/2     Running     2 (4m44s ago)   26h
+pod/frontend-76c94f7cfb-vtz6n                2/2     Running     6 (6m19s ago)   26h
+pod/loadgen-exp-011304-979h5                 0/2     Completed   0               14h
+pod/loadgen-exp-011823-snhqr                 0/2     Completed   0               14h
+pod/loadgen-exp-131219-92cqc                 0/2     Completed   0               26h
+pod/loadgen-exp-134954-mjqb6                 0/2     Completed   0               26h
+pod/loadgen-exp-154905-j5mjm                 0/2     Completed   0               2m53s
+pod/loadgenerator-69fdddd69d-2t4t5           2/2     Running     1 (4m53s ago)   26h
+pod/paymentservice-7cff85ccd7-hng66          2/2     Running     8 (6m9s ago)    26h
+pod/productcatalogservice-54c86d9f79-nfv9q   2/2     Running     6 (6m21s ago)   26h
+pod/recommendationservice-6d8ddf5d5f-qkh5d   2/2     Running     1 (4m51s ago)   26h
+pod/redis-cart-6899b65948-87b5c              2/2     Running     5 (6m17s ago)   26h
+pod/shippingservice-846f8585d7-hsc26         2/2     Running     2 (4m19s ago)   26h

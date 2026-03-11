@@ -1,0 +1,4 @@
+NAMESPACE   NAME                GATEWAYS                     HOSTS   AGE
+mesh-app    bookinfo            ["bookinfo-gateway"]         ["*"]   39h
+mesh-app    onlineboutique-vs   ["onlineboutique-gateway"]   ["*"]   26h
+ob-app      onlineboutique-vs   ["onlineboutique-gateway"]   ["*"]   26h

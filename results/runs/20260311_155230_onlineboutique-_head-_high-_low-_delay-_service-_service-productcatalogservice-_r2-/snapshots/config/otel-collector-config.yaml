@@ -1,0 +1,43 @@
+apiVersion: v1
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      probabilistic_sampler:
+        sampling_percentage: 30
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger-collector.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [probabilistic_sampler, batch]
+          exporters: [otlp/jaeger]
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.yaml":"receivers:\n  otlp:\n    protocols:\n      grpc:\n      http:\nprocessors:\n  probabilistic_sampler:\n    sampling_percentage: 30\n  batch:\n    timeout: 1s\n    send_batch_size: 1024\nexporters:\n  otlp/jaeger:\n    endpoint: jaeger-collector.observability.svc.cluster.local:4317\n    tls:\n      insecure: true\n  prometheus:\n    endpoint: 0.0.0.0:8889\nservice:\n  telemetry:\n    metrics:\n      address: 0.0.0.0:8888\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [probabilistic_sampler, batch]\n      exporters: [otlp/jaeger]\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"sampling.budget":"high","sampling.policy":"baseline_head"},"name":"otel-collector-config","namespace":"observability"}}
+  creationTimestamp: "2026-03-10T00:41:14Z"
+  labels:
+    sampling.budget: high
+    sampling.policy: baseline_head
+  name: otel-collector-config
+  namespace: observability
+  resourceVersion: "89109"
+  uid: 119e8bd4-fe72-4569-82cb-095853c1fd08

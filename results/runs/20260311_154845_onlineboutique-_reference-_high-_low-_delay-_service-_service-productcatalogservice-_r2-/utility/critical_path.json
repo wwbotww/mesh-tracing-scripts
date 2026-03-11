@@ -1,0 +1,23 @@
+{
+  "run_id": "20260311_154845_onlineboutique-_reference-_high-_low-_delay-_service-_service-productcatalogservice-_r2-",
+  "reference_run_id": null,
+  "method": "run_level_critical_edge_set_jaccard_v1",
+  "trace_counts": {
+    "current_total": 0,
+    "current_used": 0,
+    "reference_total": 0,
+    "reference_used": 0
+  },
+  "support_threshold": 0.2,
+  "critical_path_edges": [],
+  "reference_edges": [],
+  "current_edge_support": {},
+  "reference_edge_support": {},
+  "intersection_edges": [],
+  "union_edges": [],
+  "jaccard": null,
+  "precision": null,
+  "recall": null,
+  "status": "not_applicable",
+  "reason": "current_policy_is_reference"
+}
