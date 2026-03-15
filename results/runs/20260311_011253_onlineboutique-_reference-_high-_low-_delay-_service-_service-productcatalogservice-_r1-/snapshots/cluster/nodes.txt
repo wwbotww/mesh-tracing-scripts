@@ -1,3 +1,0 @@
-NAME           STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION    CONTAINER-RUNTIME
-minikube       Ready    control-plane   24h   v1.35.1   192.168.49.2   <none>        Debian GNU/Linux 12 (bookworm)   6.17.0-1007-gcp   docker://29.2.1
-minikube-m02   Ready    <none>          24h   v1.35.1   192.168.49.3   <none>        Debian GNU/Linux 12 (bookworm)   6.17.0-1007-gcp   docker://29.2.1

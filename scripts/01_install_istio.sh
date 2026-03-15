@@ -44,7 +44,9 @@ kubectl get namespace "${ISTIO_NAMESPACE}" >/dev/null 2>&1 || kubectl create nam
 log "Installing/upgrading Istio via istioctl (stable for local/minikube)..."
 istioctl install -y -i "${ISTIO_NAMESPACE}" \
   --set profile="${PROFILE}" \
+  --set meshConfig.enablePrometheusMerge=true \
   --set meshConfig.enableTracing=true \
+  --set meshConfig.defaultProviders.metrics[0]=prometheus \
   --set meshConfig.defaultProviders.tracing[0]=otel-tracing \
   --set meshConfig.extensionProviders[0].name=otel-tracing \
   --set meshConfig.extensionProviders[0].opentelemetry.service="${OTEL_TRACING_SERVICE}" \
@@ -54,6 +56,18 @@ istioctl install -y -i "${ISTIO_NAMESPACE}" \
 log "Ensuring sidecar injection label is enabled on namespace=${INJECT_NAMESPACE}..."
 kubectl get namespace "${INJECT_NAMESPACE}" >/dev/null 2>&1 || kubectl create namespace "${INJECT_NAMESPACE}" || err "Failed to create namespace ${INJECT_NAMESPACE}"
 kubectl label namespace "${INJECT_NAMESPACE}" istio-injection=enabled --overwrite || err "Failed to label namespace ${INJECT_NAMESPACE}"
+
+if kubectl -n "${INJECT_NAMESPACE}" get deploy -o name >/dev/null 2>&1; then
+  DEPLOY_COUNT="$(kubectl -n "${INJECT_NAMESPACE}" get deploy -o name | wc -l | tr -d ' ')"
+  if [[ "${DEPLOY_COUNT}" -gt 0 ]]; then
+    log "Restarting workloads in namespace=${INJECT_NAMESPACE} so sidecars pick up latest Istio config..."
+    kubectl -n "${INJECT_NAMESPACE}" rollout restart deployment || err "Failed to restart deployments in ${INJECT_NAMESPACE}"
+    while IFS= read -r deploy; do
+      [[ -n "${deploy}" ]] || continue
+      kubectl -n "${INJECT_NAMESPACE}" rollout status "${deploy}" --timeout=300s || err "Deployment not ready after restart: ${deploy}"
+    done < <(kubectl -n "${INJECT_NAMESPACE}" get deploy -o name)
+  fi
+fi
 
 mkdir -p "${RESULTS_DIR}" || err "Failed to create results directory: ${RESULTS_DIR}"
 {
@@ -81,7 +95,7 @@ istioctl analyze 2>&1 | tee -a "${LOG_FILE}" || warn "istioctl analyze reported 
 log "Getting Istio pods..."
 kubectl get pods -n "${ISTIO_NAMESPACE}" 2>&1 | tee -a "${LOG_FILE}" || err "Failed to list Istio pods in namespace ${ISTIO_NAMESPACE}"
 
-log "Validation: checking tracing provider in istio mesh config..."
-kubectl get configmap istio -n "${ISTIO_NAMESPACE}" -o yaml 2>&1 | tee -a "${LOG_FILE}" | awk '/defaultProviders:|tracing:|extensionProviders:|otel-tracing|opentelemetry|service:|port:/{print}' || true
+log "Validation: checking tracing and metrics providers in istio mesh config..."
+kubectl get configmap istio -n "${ISTIO_NAMESPACE}" -o yaml 2>&1 | tee -a "${LOG_FILE}" | awk '/defaultProviders:|metrics:|tracing:|extensionProviders:|otel-tracing|prometheus|opentelemetry|service:|port:|enablePrometheusMerge/{print}' || true
 
 log "Istio installation step completed."

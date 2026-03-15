@@ -129,6 +129,9 @@ else
   log "Deploying OnlineBoutique (gRPC microservices)..."
   kubectl apply -n "${NAMESPACE}" -f "${ONLINEBOUTIQUE_APP_URL}" || err "Failed to apply official OnlineBoutique manifests"
 
+  log "Disabling loadgenerator so only fortio-injected traffic affects experiments..."
+  kubectl scale deployment loadgenerator -n "${NAMESPACE}" --replicas=0 2>/dev/null || warn "loadgenerator deployment not found or already scaled (ignored)"
+
   log "Deploying OnlineBoutique ingress resources (Gateway + VirtualService)..."
   kubectl apply -n "${NAMESPACE}" -f - <<EOF
 apiVersion: networking.istio.io/v1beta1

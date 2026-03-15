@@ -1,3 +1,0 @@
-NAMESPACE   NAME              AGE
-mesh-app    tracing-default   39h
-ob-app      tracing-default   26h

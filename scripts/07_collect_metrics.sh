@@ -106,7 +106,8 @@ capture_text_snapshot "${CLUSTER_DIR}/app_resources.txt" kubectl get deploy,svc,
 p50_query="histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s])) by (le))"
 p95_query="histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s])) by (le))"
 p99_query="histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s])) by (le))"
-error_rate_query="sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\",response_code=~\"5..\"}[${WINDOW}s])) / clamp_min(sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s])), 0.0001)"
+error_rate_query="((sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\",response_code=~\"5..\"}[${WINDOW}s]))) or vector(0)) / clamp_min(sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s])), 0.0001)"
+request_rate_query="sum(rate(istio_requests_total{reporter=\"destination\",destination_workload_namespace=\"${APP_NS}\"}[${WINDOW}s]))"
 envoy_sum_query="sum(rate(container_cpu_usage_seconds_total{namespace=\"${APP_NS}\",container=\"istio-proxy\"}[${WINDOW}s]))"
 envoy_pod_query="sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"${APP_NS}\",container=\"istio-proxy\"}[${WINDOW}s]))"
 spans_query="sum(rate(otelcol_exporter_sent_spans{service_instance_id=~\".*\"}[${WINDOW}s]))"
@@ -119,6 +120,7 @@ p50_latency_ms = ${p50_query}
 p95_latency_ms = ${p95_query}
 p99_latency_ms = ${p99_query}
 error_rate = ${error_rate_query}
+request_rate = ${request_rate_query}
 envoy_cpu_cores_sum = ${envoy_sum_query}
 envoy_cpu_cores_per_pod = ${envoy_pod_query}
 otel_spans_per_sec = ${spans_query}
@@ -145,6 +147,7 @@ run_query_to_file "p50_latency_ms" "${p50_query}"
 run_query_to_file "p95_latency_ms" "${p95_query}"
 run_query_to_file "p99_latency_ms" "${p99_query}"
 run_query_to_file "error_rate" "${error_rate_query}"
+run_query_to_file "request_rate" "${request_rate_query}"
 run_query_to_file "envoy_cpu_cores_sum" "${envoy_sum_query}"
 run_query_to_file "envoy_cpu_cores_per_pod" "${envoy_pod_query}"
 run_query_to_file "otel_spans_per_sec" "${spans_query}"
@@ -164,6 +167,7 @@ python3 - <<'PY' \
   "${p95_query}" \
   "${p99_query}" \
   "${error_rate_query}" \
+  "${request_rate_query}" \
   "${envoy_sum_query}" \
   "${envoy_pod_query}" \
   "${spans_query}" \
@@ -186,12 +190,13 @@ from pathlib import Path
     p95_query,
     p99_query,
     error_rate_query,
+    request_rate_query,
     envoy_sum_query,
     envoy_pod_query,
     spans_query,
     bytes_query,
     accepted_spans_query,
-) = sys.argv[1:18]
+) = sys.argv[1:19]
 
 raw_dir_path = Path(raw_dir)
 
@@ -245,6 +250,7 @@ metrics = {
     "p95_latency_ms": build_metric("p95_latency_ms", p95_query),
     "p99_latency_ms": build_metric("p99_latency_ms", p99_query),
     "error_rate": build_metric("error_rate", error_rate_query),
+    "request_rate": build_metric("request_rate", request_rate_query),
     "envoy_cpu_cores_sum": build_metric("envoy_cpu_cores_sum", envoy_sum_query),
     "envoy_cpu_cores_per_pod": build_metric("envoy_cpu_cores_per_pod", envoy_pod_query, expect_series=True),
     "otel_spans_per_sec": build_metric("otel_spans_per_sec", spans_query),

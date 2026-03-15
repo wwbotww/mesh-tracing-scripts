@@ -35,6 +35,45 @@ command -v kubectl >/dev/null 2>&1 || err "kubectl not found"
 command -v helm >/dev/null 2>&1 || err "helm not found"
 command -v curl >/dev/null 2>&1 || err "curl not found"
 
+detect_app_access_url() {
+  local path="/"
+  if kubectl -n "${APP_NS}" get svc productpage >/dev/null 2>&1; then
+    path="/productpage"
+  fi
+
+  if command -v minikube >/dev/null 2>&1 && minikube status >/dev/null 2>&1; then
+    local ip nodeport
+    ip="$(minikube ip || true)"
+    nodeport="$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}' || true)"
+    if [[ -n "${ip}" && -n "${nodeport}" ]]; then
+      echo "http://${ip}:${nodeport}${path}"
+      return 0
+    fi
+  fi
+
+  local ingress_host ingress_port
+  ingress_host="$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || true)"
+  ingress_port="$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}' || true)"
+  if [[ -n "${ingress_host}" && -n "${ingress_port}" ]]; then
+    echo "http://${ingress_host}:${ingress_port}${path}"
+    return 0
+  fi
+
+  return 1
+}
+
+seed_istio_request_metrics() {
+  local target_url
+  target_url="$(detect_app_access_url || true)"
+  [[ -n "${target_url}" ]] || return 0
+
+  log "Seeding application traffic so Istio request metrics appear in Prometheus..."
+  for _ in $(seq 1 20); do
+    curl -fsS --max-time 5 "${target_url}" >/dev/null 2>&1 || true
+    sleep 1
+  done
+}
+
 mkdir -p "${RESULTS_DIR}" || err "Failed to create results dir: ${RESULTS_DIR}"
 rm -f "${LOG_FILE}" || true
 exec > >(tee -a "${LOG_FILE}") 2>&1
@@ -244,13 +283,16 @@ spec:
     interval: 15s
 EOF
 
-log "Applying Istio Telemetry tracing policy for namespace=${APP_NS}..."
+log "Applying Istio Telemetry metrics+tracing policy for namespace=${APP_NS}..."
 kubectl apply -n "${APP_NS}" -f - <<EOF
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
   name: tracing-default
 spec:
+  metrics:
+  - providers:
+    - name: prometheus
   tracing:
   - providers:
     - name: otel-tracing
@@ -285,24 +327,26 @@ for i in $(seq 1 15); do
 done
 [[ "${READY}" -eq 1 ]] || err "Jaeger UI is not reachable on local port-forward"
 
-log "Verification 3/3: Prometheus has Istio/Envoy related metrics"
+log "Verification 3/3: Prometheus has Istio standard metrics"
 kubectl -n "${OBS_NS}" port-forward svc/"${PROM_RELEASE}"-kube-prometheus-stack-prometheus 9090:9090 >/tmp/prom-pf.log 2>&1 &
 PF_PROM_PID=$!
 sleep 3
 
-FOUND_METRIC=0
+seed_istio_request_metrics
+
+FOUND_ISTIO_METRIC=0
 for i in $(seq 1 24); do
   NAMES="$(curl -fsS "http://127.0.0.1:9090/api/v1/label/__name__/values" || true)"
-  if echo "${NAMES}" | python3 -c 'import json,sys; d=json.load(sys.stdin); s=" ".join(d.get("data",[])); sys.exit(0 if ("istio_request_duration" in s or "envoy_cluster_" in s) else 1)'; then
-    FOUND_METRIC=1
+  if echo "${NAMES}" | python3 -c 'import json,sys; d=json.load(sys.stdin); s=" ".join(d.get("data",[])); sys.exit(0 if ("istio_requests_total" in s or "istio_request_duration_milliseconds_bucket" in s) else 1)'; then
+    FOUND_ISTIO_METRIC=1
     break
   fi
   sleep 5
 done
-[[ "${FOUND_METRIC}" -eq 1 ]] || err "Prometheus cannot find istio_request_duration or envoy_cluster_* metrics yet"
+[[ "${FOUND_ISTIO_METRIC}" -eq 1 ]] || err "Prometheus cannot find istio_requests_total or istio_request_duration_milliseconds_bucket yet"
 
-log "Verification query example (istio_request_duration OR envoy_cluster_*):"
-curl -fsS "http://127.0.0.1:9090/api/v1/query?query=istio_request_duration_milliseconds_bucket" || true
+log "Verification query example (Istio standard metrics):"
+curl -fsS "http://127.0.0.1:9090/api/v1/query?query=istio_requests_total" || true
 curl -fsS "http://127.0.0.1:9090/api/v1/query?query=envoy_cluster_upstream_rq_total" || true
 
 log "Verification 4/4: telemetry resource exists"

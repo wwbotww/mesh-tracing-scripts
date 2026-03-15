@@ -50,6 +50,18 @@ LOAD_START_EPOCH_MS=""
 FAULT_APPLY_EPOCH_MS=""
 FAULT_CLEAR_EPOCH_MS=""
 RUN_END_EPOCH_MS=""
+PROM_SVC="obs-kube-prometheus-stack-prometheus"
+CONTROLLER_ENABLED="false"
+CONTROLLER_PID=""
+CONTROLLER_PROM_PF_PID=""
+CONTROLLER_PROM_PORT_LOCAL="19093"
+CONTROLLER_POLL_INTERVAL_SECONDS="30"
+CONTROLLER_WINDOW_SECONDS="120"
+CONTROLLER_WARMUP_SECONDS="0"
+CONTROLLER_INITIAL_PROFILE=""
+CONTROLLER_DIR=""
+CONTROLLER_SUMMARY_FILE=""
+CONTROLLER_EVENTS_FILE=""
 
 usage() {
   cat <<'EOF'
@@ -150,10 +162,6 @@ echo "==== $(date '+%Y-%m-%d %H:%M:%S') experiment run ====" >> "${DRIVER_LOG}"
 exec > >(tee -a "${DRIVER_LOG}") 2>&1
 set -x
 
-if [[ "${CANONICAL_POLICY}" == "my_policy" ]]; then
-  POLICY_IMPL_STATUS="placeholder"
-fi
-
 detect_target_url() {
   local path="/"
   [[ "${APP}" == "bookinfo" ]] && path="/productpage"
@@ -195,6 +203,15 @@ ensure_app() {
   if ! kubectl -n "${APP_NS}" get deploy "${key_deploy}" >/dev/null 2>&1; then
     log "App ${APP} not detected, deploying..."
     bash "${ROOT_DIR}/scripts/02_deploy_app.sh" --app "${APP}" --namespace "${APP_NS}"
+  fi
+}
+
+# Ensure only fortio-injected traffic affects experiments (no loadgenerator background traffic).
+disable_loadgenerator_if_present() {
+  [[ "${APP}" != "onlineboutique" ]] && return 0
+  if kubectl -n "${APP_NS}" get deploy loadgenerator >/dev/null 2>&1; then
+    log "Scaling loadgenerator to 0 replicas so only fortio traffic is used."
+    kubectl scale deployment loadgenerator -n "${APP_NS}" --replicas=0 || warn "Failed to scale loadgenerator (continuing)"
   fi
 }
 
@@ -274,6 +291,60 @@ resolve_output_dir() {
   mkdir -p "${OUT_DIR}/load" "${OUT_DIR}/fault" "${OUT_DIR}/utility" || err "Failed to create run dir"
 }
 
+resolve_controller_initial_profile() {
+  case "${CANONICAL_BUDGET}" in
+    low) echo "conservative" ;;
+    mid) echo "balanced" ;;
+    high) echo "aggressive" ;;
+    *) echo "balanced" ;;
+  esac
+}
+
+start_controller() {
+  [[ "${CANONICAL_POLICY}" == "my_policy" ]] || return 0
+
+  CONTROLLER_ENABLED="true"
+  CONTROLLER_WARMUP_SECONDS="${WARMUP_SEC}"
+  CONTROLLER_INITIAL_PROFILE="$(resolve_controller_initial_profile)"
+  CONTROLLER_DIR="${OUT_DIR}/controller"
+  CONTROLLER_SUMMARY_FILE="${CONTROLLER_DIR}/controller_summary.json"
+  CONTROLLER_EVENTS_FILE="${CONTROLLER_DIR}/controller_events.jsonl"
+  mkdir -p "${CONTROLLER_DIR}" || err "Failed to create controller output dir"
+
+  kubectl -n "${OBS_NS}" port-forward svc/"${PROM_SVC}" "${CONTROLLER_PROM_PORT_LOCAL}:9090" \
+    >"${CONTROLLER_DIR}/prometheus_port_forward.log" 2>&1 &
+  CONTROLLER_PROM_PF_PID=$!
+  sleep 3
+
+  python3 "${ROOT_DIR}/scripts/volatility_tail_controller.py" \
+    --prometheus-url "http://127.0.0.1:${CONTROLLER_PROM_PORT_LOCAL}" \
+    --app-namespace "${APP_NS}" \
+    --obs-namespace "${OBS_NS}" \
+    --output-dir "${CONTROLLER_DIR}" \
+    --poll-interval-seconds "${CONTROLLER_POLL_INTERVAL_SECONDS}" \
+    --window-seconds "${CONTROLLER_WINDOW_SECONDS}" \
+    --warmup-seconds "${CONTROLLER_WARMUP_SECONDS}" \
+    --collector-deployment otel-collector \
+    --initial-profile "${CONTROLLER_INITIAL_PROFILE}" \
+    --budget-label "${CANONICAL_BUDGET}" \
+    --start-epoch-ms "${LOAD_START_EPOCH_MS}" \
+    >"${CONTROLLER_DIR}/controller_stdout.log" 2>"${CONTROLLER_DIR}/controller_stderr.log" &
+  CONTROLLER_PID=$!
+}
+
+stop_controller() {
+  if [[ -n "${CONTROLLER_PID}" ]]; then
+    kill "${CONTROLLER_PID}" >/dev/null 2>&1 || true
+    wait "${CONTROLLER_PID}" >/dev/null 2>&1 || true
+    CONTROLLER_PID=""
+  fi
+  if [[ -n "${CONTROLLER_PROM_PF_PID}" ]]; then
+    kill "${CONTROLLER_PROM_PF_PID}" >/dev/null 2>&1 || true
+    wait "${CONTROLLER_PROM_PF_PID}" >/dev/null 2>&1 || true
+    CONTROLLER_PROM_PF_PID=""
+  fi
+}
+
 write_run_context() {
   python3 - <<'PY' \
     "${OUT_DIR}/run_context.json" \
@@ -305,7 +376,16 @@ write_run_context() {
     "${LOAD_START_EPOCH_MS}" \
     "${FAULT_APPLY_EPOCH_MS}" \
     "${FAULT_CLEAR_EPOCH_MS}" \
-    "${RUN_END_EPOCH_MS}"
+    "${RUN_END_EPOCH_MS}" \
+    "${CONTROLLER_ENABLED}" \
+    "${CONTROLLER_POLL_INTERVAL_SECONDS}" \
+    "${CONTROLLER_WINDOW_SECONDS}" \
+    "${CONTROLLER_WARMUP_SECONDS}" \
+    "${CONTROLLER_INITIAL_PROFILE}" \
+    "${CONTROLLER_DIR}" \
+    "${CONTROLLER_SUMMARY_FILE}" \
+    "${CONTROLLER_EVENTS_FILE}" \
+    "${CONTROLLER_PROM_PORT_LOCAL}"
 import json
 import sys
 from pathlib import Path
@@ -341,7 +421,16 @@ from pathlib import Path
     fault_apply_epoch_ms,
     fault_clear_epoch_ms,
     run_end_epoch_ms,
-) = sys.argv[1:31]
+    controller_enabled,
+    controller_poll_interval_seconds,
+    controller_window_seconds,
+    controller_warmup_seconds,
+    controller_initial_profile,
+    controller_dir,
+    controller_summary_file,
+    controller_events_file,
+    controller_prom_port_local,
+) = sys.argv[1:40]
 
 def maybe_int(value):
     try:
@@ -389,6 +478,23 @@ doc = {
         "fault_clear_epoch_ms": maybe_int(fault_clear_epoch_ms),
         "run_end_epoch_ms": maybe_int(run_end_epoch_ms),
     },
+    "controller": (
+        {
+            "enabled": True,
+            "poll_interval_seconds": maybe_int(controller_poll_interval_seconds),
+            "window_seconds": maybe_int(controller_window_seconds),
+            "warmup_seconds": maybe_int(controller_warmup_seconds),
+            "initial_profile": controller_initial_profile or None,
+            "prometheus_port_local": maybe_int(controller_prom_port_local),
+            "artifacts": {
+                "dir": controller_dir or None,
+                "summary_file": controller_summary_file or None,
+                "events_file": controller_events_file or None,
+            },
+        }
+        if controller_enabled == "true"
+        else None
+    ),
 }
 Path(output_path).write_text(json.dumps(doc, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 PY
@@ -512,6 +618,7 @@ PY
 
 cleanup_fault() {
   kill "${JAEGER_PF_PID:-}" >/dev/null 2>&1 || true
+  stop_controller
   if [[ "${FAULT_APPLIED}" == true && -n "${TARGET_SERVICE}" ]]; then
     local fault_args=()
     if [[ -n "${SOURCE_SERVICE}" ]]; then
@@ -529,6 +636,7 @@ RUN_START_EPOCH_MS="$(now_epoch_ms)"
 ensure_prereq
 ensure_istio
 ensure_app
+disable_loadgenerator_if_present
 ensure_observability
 
 parse_target
@@ -560,6 +668,9 @@ metadata:
   name: ${LOAD_JOB_NAME}
 spec:
   template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       restartPolicy: Never
       containers:
@@ -578,6 +689,9 @@ spec:
         - "x-envoy-force-trace: true"
         - "${TARGET_URL}"
 EOF
+
+start_controller
+write_run_context
 
 sleep "${WARMUP_SEC}"
 sleep "${FAULT_START_AFTER_WARMUP}"
@@ -609,6 +723,8 @@ if [[ "${FAULT_TYPE}" == "none" ]]; then
   FAULT_APPLY_EPOCH_MS="${LOAD_START_EPOCH_MS}"
   FAULT_CLEAR_EPOCH_MS="${RUN_END_EPOCH_MS}"
 fi
+write_run_context
+stop_controller
 write_run_context
 python3 "${ROOT_DIR}/scripts/parse_fortio_output.py" "${OUT_DIR}/load/fortio_stdout.log" > "${OUT_DIR}/load/load_summary.json"
 
@@ -723,16 +839,20 @@ python3 - <<'PY' \
   "${OUT_DIR}/utility/rca_ranking.json" \
   "${OUT_DIR}/utility/critical_path.json" \
   "${OUT_DIR}/fault/apply_summary.json" \
-  "${OUT_DIR}/fault/clear_summary.json"
+  "${OUT_DIR}/fault/clear_summary.json" \
+  "${CONTROLLER_SUMMARY_FILE}" \
+  "${CONTROLLER_EVENTS_FILE}"
 import json
 import sys
 from pathlib import Path
 
-summary_path, context_path, load_path, metrics_path, rca_path, critical_path, fault_apply_path, fault_clear_path = sys.argv[1:9]
+summary_path, context_path, load_path, metrics_path, rca_path, critical_path, fault_apply_path, fault_clear_path, controller_summary_path, controller_events_path = sys.argv[1:11]
 
 def load_doc(path):
+    if not path:
+        return None
     p = Path(path)
-    if not p.exists():
+    if not p.exists() or not p.is_file():
         return None
     return json.loads(p.read_text(encoding="utf-8"))
 
@@ -743,6 +863,7 @@ rca = load_doc(rca_path) or {}
 critical = load_doc(critical_path) or {}
 fault_apply = load_doc(fault_apply_path)
 fault_clear = load_doc(fault_clear_path)
+controller = load_doc(controller_summary_path)
 
 metric_map = metrics.get("metrics", {})
 
@@ -776,6 +897,7 @@ doc = {
         "apply": fault_apply,
         "clear": fault_clear,
     },
+    "controller": controller,
     "cost_metrics": {
         "latency_ms": {
             "fortio": load_summary.get("latency_ms"),
@@ -789,6 +911,7 @@ doc = {
             "fortio": load_summary.get("http_error_rate"),
             "prometheus": metric_map.get("error_rate"),
         },
+        "request_rate": metric_map.get("request_rate"),
         "sidecar_cpu": {
             "sum_cores": metric_map.get("envoy_cpu_cores_sum"),
             "per_pod_cores": metric_map.get("envoy_cpu_cores_per_pod"),
@@ -811,6 +934,8 @@ doc = {
         "rca_features": str(Path(summary_path).parent / "utility" / "rca_features.json"),
         "rca_ranking": rca_path,
         "critical_path": critical_path,
+        "controller_summary": controller_summary_path or None,
+        "controller_events": controller_events_path or None,
         "snapshots_dir": str(Path(summary_path).parent / "snapshots"),
         "metrics_raw_dir": str(Path(summary_path).parent / "metrics_raw"),
     },

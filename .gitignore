@@ -1,0 +1,14 @@
+# Experiment outputs and logs
+results/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.Python
+*.so
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

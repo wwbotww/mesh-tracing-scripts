@@ -20,10 +20,17 @@ You need these tools in your PATH:
 - `helm`
 - `minikube`
 
-Start a local cluster (Docker driver unified path):
+Start a local cluster in single-node mode (Docker driver unified path):
 
 ```bash
-minikube start --driver=docker --nodes=2 --cpus=4 --memory=6144
+minikube start --driver=docker --cpus=4 --memory=6144
+```
+
+If your existing Minikube profile already has extra worker nodes, reset it first:
+
+```bash
+minikube delete
+minikube start --driver=docker --cpus=4 --memory=6144
 ```
 
 Run prerequisite checks:
@@ -35,7 +42,7 @@ bash scripts/00_prereq_check.sh
 Validation points:
 
 - command exits with code 0
-- `kubectl get nodes` returns nodes
+- `kubectl get nodes` returns exactly one Ready node
 
 ## 2) Install Istio
 
@@ -62,6 +69,8 @@ Validation points:
 
 - app pods are running in `mesh-app`
 - service `productpage` (bookinfo) or `frontend` (onlineboutique) exists
+
+For **onlineboutique**, the built-in `loadgenerator` deployment is scaled to 0 so that only fortio-injected traffic affects experiments. The experiment driver (`08_run_experiment.sh`) also ensures loadgenerator is scaled to 0 at run time.
 
 ## 4) Install Observability Stack
 
@@ -127,7 +136,7 @@ Canonical policy aliases:
 
 - `head` -> `baseline_head`
 - `tail` -> `baseline_tail`
-- `my_policy` -> `ours`
+- `my_policy` -> volatility-driven tail controller
 - `reference` -> high-sampling reference config
 - `no_tracing` -> Telemetry sampling `0.0`
 
@@ -303,4 +312,4 @@ Collect per-run outputs in `results/` and compare:
 - Wire OTel Collector exporter to Jaeger and/or Tempo.
 - Add Prometheus scrape jobs for Istio proxies and control plane.
 - Add Grafana dashboards for overhead and tail latency decomposition.
-- Implement concrete `ours` sampling algorithm and document policy logic.
+- Tune and document the volatility-driven `my_policy` controller thresholds and profile mapping.

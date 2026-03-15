@@ -43,7 +43,7 @@ normalize_policy() {
   case "$1" in
     baseline_head|head) echo "baseline_head" ;;
     baseline_tail|tail) echo "baseline_tail" ;;
-    ours|my_policy) echo "ours" ;;
+    ours|my_policy) echo "my_policy" ;;
     reference) echo "reference" ;;
     no_tracing) echo "no_tracing" ;;
     *) return 1 ;;
@@ -61,7 +61,7 @@ normalize_budget() {
 
 CANONICAL_POLICY="$(normalize_policy "${POLICY}" || true)"
 CANONICAL_BUDGET="$(normalize_budget "${BUDGET}" || true)"
-[[ -n "${CANONICAL_POLICY}" ]] || err "--policy must be baseline_head|baseline_tail|ours|head|tail|my_policy|reference|no_tracing"
+[[ -n "${CANONICAL_POLICY}" ]] || err "--policy must be baseline_head|baseline_tail|head|tail|my_policy|reference|no_tracing"
 [[ -n "${CANONICAL_BUDGET}" ]] || err "--budget must be low|mid|medium|high"
 
 command -v kubectl >/dev/null 2>&1 || err "kubectl not found"
@@ -160,14 +160,104 @@ EOF
   fi
 }
 
-if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail|ours)$ ]]; then
+apply_my_policy() {
+  local generated_budget="$1"
+  local initial_profile="balanced"
+  local latency_threshold="300"
+  local fallback_percentage="10"
+  local num_traces="30000"
+  local expected_new_traces_per_sec="150"
+
+  case "${generated_budget}" in
+    low)
+      initial_profile="conservative"
+      latency_threshold="500"
+      fallback_percentage="1"
+      num_traces="10000"
+      expected_new_traces_per_sec="50"
+      ;;
+    mid)
+      initial_profile="balanced"
+      latency_threshold="300"
+      fallback_percentage="10"
+      num_traces="30000"
+      expected_new_traces_per_sec="150"
+      ;;
+    high)
+      initial_profile="aggressive"
+      latency_threshold="200"
+      fallback_percentage="30"
+      num_traces="80000"
+      expected_new_traces_per_sec="300"
+      ;;
+  esac
+
+  kubectl apply -n "${NAMESPACE}" -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${CM_NAME}
+  labels:
+    sampling.policy: my_policy
+    sampling.budget: ${generated_budget}
+    sampling.mode: volatility_controller
+    sampling.profile: ${initial_profile}
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: ${num_traces}
+        expected_new_traces_per_sec: ${expected_new_traces_per_sec}
+        policies:
+          - name: error-traces
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: high-latency
+            type: latency
+            latency:
+              threshold_ms: ${latency_threshold}
+          - name: fallback-probability
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: ${fallback_percentage}
+      batch:
+        timeout: 1s
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger-collector.${NAMESPACE}.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling, batch]
+          exporters: [otlp/jaeger]
+EOF
+}
+
+if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail)$ ]]; then
   POLICY_FILE="${ROOT_DIR}/manifests/sampling/${CANONICAL_POLICY}_${CANONICAL_BUDGET}.yaml"
   [[ -f "${POLICY_FILE}" ]] || err "Policy file not found: ${POLICY_FILE}"
 fi
 
 log "Applying sampling policy ConfigMap for policy=${CANONICAL_POLICY}, budget=${CANONICAL_BUDGET}"
-if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail|ours)$ ]]; then
+if [[ "${CANONICAL_POLICY}" =~ ^(baseline_head|baseline_tail)$ ]]; then
   kubectl apply -n "${NAMESPACE}" -f "${POLICY_FILE}" || err "Failed to apply ${POLICY_FILE}"
+elif [[ "${CANONICAL_POLICY}" == "my_policy" ]]; then
+  apply_my_policy "${CANONICAL_BUDGET}" || err "Failed to apply generated policy ${CANONICAL_POLICY}"
 else
   apply_generated_policy "${CANONICAL_POLICY}" "${CANONICAL_BUDGET}" || err "Failed to apply generated policy ${CANONICAL_POLICY}"
 fi
@@ -240,6 +330,8 @@ echo "check_command:"
 echo "curl -fsS \"http://127.0.0.1:${JAEGER_PORT_LOCAL}/api/traces?service=${JAEGER_SERVICE_NAME}&lookback=15m&limit=200\" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get(\"data\", [])))'"
 if [[ "${CANONICAL_POLICY}" == "no_tracing" ]]; then
   echo "expected: trace count should stay close to zero because Telemetry sampling is set to 0.0."
+elif [[ "${CANONICAL_POLICY}" == "my_policy" ]]; then
+  echo "expected: initial profile follows budget, then the external controller may adjust tail-sampling parameters during the run."
 else
   echo "expected: with same load pattern, low < mid < high (trace count or exported spans/sec)."
 fi

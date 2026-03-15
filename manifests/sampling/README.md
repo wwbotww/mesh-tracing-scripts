@@ -16,14 +16,15 @@ Policy details:
   - latency threshold
   - status_code = ERROR
   - fallback probabilistic policy
-- `ours`: placeholder "service-granularity dynamic sampling", with per-service sampling rates.
+- `my_policy`: generated at runtime by `scripts/04_apply_sampling_policy.sh` as a volatility-driven tail-sampling base config. A controller process can later adjust its latency threshold and fallback probability during the run.
+- `ours`: historical placeholder "service-granularity dynamic sampling", with per-service sampling rates. The files remain in this folder for reference but are no longer the experiment-facing `my_policy` implementation.
 - `reference`: generated at runtime by `scripts/04_apply_sampling_policy.sh` as a higher-sampling head-based config (no static manifest file).
 - `no_tracing`: generated at runtime by `scripts/04_apply_sampling_policy.sh` and paired with Telemetry sampling `0.0`.
 
 Experiment-facing aliases accepted by `scripts/04_apply_sampling_policy.sh`:
 - `head` -> `baseline_head`
 - `tail` -> `baseline_tail`
-- `my_policy` -> `ours`
+- `my_policy` -> volatility-driven tail controller
 
 Apply with:
 - `bash scripts/04_apply_sampling_policy.sh --policy baseline_head --budget low`
