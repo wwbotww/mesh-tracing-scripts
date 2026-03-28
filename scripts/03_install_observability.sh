@@ -102,6 +102,18 @@ spec:
       containers:
       - name: jaeger
         image: jaegertracing/all-in-one:1.57
+        env:
+        - name: SPAN_STORAGE_TYPE
+          value: memory
+        - name: MEMORY_MAX_TRACES
+          value: "15000"
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 250m
+          limits:
+            memory: 2Gi
+            cpu: "1"
         ports:
         - containerPort: 16686
         - containerPort: 4317

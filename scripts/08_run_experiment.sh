@@ -56,7 +56,7 @@ CONTROLLER_PID=""
 CONTROLLER_PROM_PF_PID=""
 CONTROLLER_PROM_PORT_LOCAL="19093"
 CONTROLLER_POLL_INTERVAL_SECONDS="30"
-CONTROLLER_WINDOW_SECONDS="120"
+CONTROLLER_WINDOW_SECONDS="60"
 CONTROLLER_WARMUP_SECONDS="0"
 CONTROLLER_INITIAL_PROFILE=""
 CONTROLLER_DIR=""
@@ -187,12 +187,39 @@ detect_target_url() {
 }
 
 ensure_prereq() {
-  bash "${ROOT_DIR}/scripts/00_prereq_check.sh"
+  local attempt
+  for attempt in 1 2 3; do
+    if bash "${ROOT_DIR}/scripts/00_prereq_check.sh"; then
+      return 0
+    fi
+    if [[ ${attempt} -lt 3 ]]; then
+      warn "Prereq check failed (attempt ${attempt}/3), waiting 15s for cluster to stabilize..."
+      sleep 15
+    fi
+  done
+  err "Prereq check failed after 3 attempts"
+}
+
+# Retry a kubectl read-only check up to 6 times with 8s back-off (48s total window).
+# Covers kube-apiserver restarts which can take ~20-30s on this single-node minikube.
+# Distinguishes transient API-server blips from genuine "resource not found".
+kubectl_check_with_retry() {
+  local attempt max_attempts=6 sleep_sec=8
+  for attempt in $(seq 1 ${max_attempts}); do
+    if kubectl "$@" >/dev/null 2>&1; then
+      return 0
+    fi
+    if [[ ${attempt} -lt ${max_attempts} ]]; then
+      warn "kubectl $* failed (attempt ${attempt}/${max_attempts}), retrying in ${sleep_sec}s..."
+      sleep "${sleep_sec}"
+    fi
+  done
+  return 1
 }
 
 ensure_istio() {
-  if ! kubectl -n "${ISTIO_NS}" get deploy istiod >/dev/null 2>&1; then
-    log "Istio not detected, installing..."
+  if ! kubectl_check_with_retry -n "${ISTIO_NS}" get deploy istiod; then
+    log "Istio not detected after retries, installing..."
     bash "${ROOT_DIR}/scripts/01_install_istio.sh" --profile demo --namespace "${ISTIO_NS}"
   fi
 }
@@ -200,8 +227,8 @@ ensure_istio() {
 ensure_app() {
   local key_deploy="productpage"
   [[ "${APP}" == "onlineboutique" ]] && key_deploy="frontend"
-  if ! kubectl -n "${APP_NS}" get deploy "${key_deploy}" >/dev/null 2>&1; then
-    log "App ${APP} not detected, deploying..."
+  if ! kubectl_check_with_retry -n "${APP_NS}" get deploy "${key_deploy}"; then
+    log "App ${APP} not detected after retries, deploying..."
     bash "${ROOT_DIR}/scripts/02_deploy_app.sh" --app "${APP}" --namespace "${APP_NS}"
   fi
 }
@@ -216,10 +243,25 @@ disable_loadgenerator_if_present() {
 }
 
 ensure_observability() {
-  if ! kubectl -n "${OBS_NS}" get deploy otel-collector >/dev/null 2>&1; then
-    log "Observability stack not detected, installing..."
+  if ! kubectl_check_with_retry -n "${OBS_NS}" get deploy otel-collector; then
+    log "Observability stack not detected after retries, installing..."
     bash "${ROOT_DIR}/scripts/03_install_observability.sh" --namespace "${OBS_NS}" --app-namespace "${APP_NS}"
   fi
+}
+
+# Wait until a local port-forward is accepting connections (max 20s).
+wait_for_port_forward() {
+  local port="$1" label="${2:-port-forward}" deadline
+  deadline=$(( $(date +%s) + 20 ))
+  until curl -sf "http://127.0.0.1:${port}/" >/dev/null 2>&1 || \
+        curl -sf "http://127.0.0.1:${port}/api/services" >/dev/null 2>&1; do
+    if [[ $(date +%s) -gt ${deadline} ]]; then
+      warn "${label} on port ${port} not ready after 20s, proceeding anyway"
+      return 0
+    fi
+    sleep 1
+  done
+  log "${label} on port ${port} is ready"
 }
 
 parse_target() {
@@ -314,7 +356,7 @@ start_controller() {
   kubectl -n "${OBS_NS}" port-forward svc/"${PROM_SVC}" "${CONTROLLER_PROM_PORT_LOCAL}:9090" \
     >"${CONTROLLER_DIR}/prometheus_port_forward.log" 2>&1 &
   CONTROLLER_PROM_PF_PID=$!
-  sleep 3
+  wait_for_port_forward "${CONTROLLER_PROM_PORT_LOCAL}" "prometheus"
 
   python3 "${ROOT_DIR}/scripts/volatility_tail_controller.py" \
     --prometheus-url "http://127.0.0.1:${CONTROLLER_PROM_PORT_LOCAL}" \
@@ -548,11 +590,9 @@ resolve_reference_run_summary() {
     "${APP}" \
     "${LOAD_LEVEL}" \
     "${RPS}" \
-    "${FAULT_TYPE}" \
-    "${FAULT_TARGET_TYPE}" \
-    "${FAULT_TARGET}" \
     "${REPEAT_ID}" \
-    "${CANONICAL_POLICY}"
+    "${CANONICAL_POLICY}" \
+    "${CANONICAL_BUDGET}"
 import json
 import sys
 from pathlib import Path
@@ -562,12 +602,10 @@ from pathlib import Path
     app,
     load_level,
     requested_rps,
-    fault_type,
-    fault_target_type,
-    fault_target,
     repeat_id,
     current_policy,
-) = sys.argv[1:10]
+    current_budget,
+) = sys.argv[1:8]
 
 if current_policy == "reference":
     print("")
@@ -578,6 +616,9 @@ if not path.exists():
     print("")
     sys.exit(0)
 
+# Find the reference/fault=none run that matches app, load, rps, repeat_id.
+# RCA compares *current* (possibly faulted) traces against a healthy baseline,
+# so the reference must be a no-fault run regardless of the current fault type.
 records = []
 for raw_line in path.read_text(encoding="utf-8").splitlines():
     raw_line = raw_line.strip()
@@ -595,15 +636,12 @@ for raw_line in path.read_text(encoding="utf-8").splitlines():
         continue
     if str(record.get("requested_rps") or "") != str(requested_rps):
         continue
-    if record.get("fault_type") != fault_type:
-        continue
-    if str(record.get("fault_target_type") or "") != str(fault_target_type or ""):
-        continue
-    if str(record.get("fault_target") or "") != str(fault_target or ""):
-        continue
     if str(record.get("repeat_id") or "") != str(repeat_id):
         continue
     if record.get("policy") != "reference":
+        continue
+    # Always use fault=none reference as healthy baseline for RCA comparison.
+    if record.get("fault_type") != "none":
         continue
     records.append(record)
 
@@ -652,7 +690,7 @@ write_utility_placeholders
 
 bash "${ROOT_DIR}/scripts/04_apply_sampling_policy.sh" --policy "${CANONICAL_POLICY}" --budget "${CANONICAL_BUDGET}" --namespace "${OBS_NS}" --app "${APP}" --app-namespace "${APP_NS}"
 
-WARMUP_SEC=60
+WARMUP_SEC=120
 FAULT_PHASE_SEC=$(( DURATION * 60 / 100 ))
 FAULT_START_AFTER_WARMUP=$(( DURATION * 20 / 100 ))
 TOTAL_LOAD_SEC=$(( WARMUP_SEC + DURATION ))
@@ -683,6 +721,8 @@ spec:
         - "${RPS}"
         - -t
         - "${TOTAL_LOAD_SEC}s"
+        - -p
+        - "50,75,90,95,99,99.9"
         - -H
         - "x-b3-sampled: 1"
         - -H
@@ -764,7 +804,7 @@ REFERENCE_RUN_DIR=""
 ENTRY_SERVICE="$(resolve_entry_service)"
 kubectl -n "${OBS_NS}" port-forward svc/jaeger-query "${JAEGER_LOCAL_PORT}:16686" >/tmp/jaeger-rca-export-pf.log 2>&1 &
 JAEGER_PF_PID=$!
-sleep 3
+wait_for_port_forward "${JAEGER_LOCAL_PORT}" "jaeger-query"
 
 python3 "${ROOT_DIR}/scripts/export_traces.py" \
   --run-dir "${OUT_DIR}" \
@@ -788,7 +828,33 @@ doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(doc.get("run_id", ""))
 PY
 )"
-  python3 - <<'PY' "${REFERENCE_RUN_DIR}/run_context.json" > "${OUT_DIR}/utility/reference_window.txt"
+
+  # Prefer the reference run's already-exported traces on disk (survives Jaeger OOM/restarts).
+  REF_DISK_TRACES="${REFERENCE_RUN_DIR}/utility/raw_traces/current_traces.json"
+  if [[ -f "${REF_DISK_TRACES}" ]]; then
+    REF_TRACE_COUNT="$(python3 -c "import json; d=json.load(open('${REF_DISK_TRACES}')); print(len(d.get('data',[])))")"
+    if [[ "${REF_TRACE_COUNT}" -gt 0 ]]; then
+      log "Reusing reference traces from disk: ${REF_DISK_TRACES} (${REF_TRACE_COUNT} traces)"
+      cp "${REF_DISK_TRACES}" "${OUT_DIR}/utility/raw_traces/reference_traces.json"
+      python3 - <<'PY' "${OUT_DIR}/utility/raw_traces/reference_trace_meta.json" "${REFERENCE_RUN_DIR}" "${REF_TRACE_COUNT}"
+import json, sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(json.dumps({
+    "run_dir": sys.argv[2],
+    "source": "disk_reuse",
+    "trace_count": int(sys.argv[3]),
+    "status": "ok",
+}, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+PY
+      REFERENCE_TRACE_ARGS=(--reference-run-id "${REFERENCE_RUN_ID}" --reference-traces "${OUT_DIR}/utility/raw_traces/reference_traces.json")
+    else
+      log "Reference traces on disk are empty, falling back to Jaeger query"
+    fi
+  fi
+
+  # Fallback: query Jaeger if disk traces unavailable or empty.
+  if [[ ${#REFERENCE_TRACE_ARGS[@]} -eq 0 ]]; then
+    python3 - <<'PY' "${REFERENCE_RUN_DIR}/run_context.json" > "${OUT_DIR}/utility/reference_window.txt"
 import json
 import sys
 from pathlib import Path
@@ -797,24 +863,21 @@ doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 timestamps = doc.get("timestamps", {})
 print(f"{timestamps.get('fault_apply_epoch_ms','')},{timestamps.get('fault_clear_epoch_ms','')}")
 PY
-  REF_WINDOW="$(python3 - <<'PY' "${OUT_DIR}/utility/reference_window.txt"
-from pathlib import Path
-print(Path(__import__('sys').argv[1]).read_text(encoding='utf-8').strip())
-PY
-)"
-  REF_START_MS="${REF_WINDOW%%,*}"
-  REF_END_MS="${REF_WINDOW##*,}"
-  if [[ -n "${REF_START_MS}" && -n "${REF_END_MS}" ]]; then
-    python3 "${ROOT_DIR}/scripts/export_traces.py" \
-      --run-dir "${REFERENCE_RUN_DIR}" \
-      --jaeger-url "http://127.0.0.1:${JAEGER_LOCAL_PORT}" \
-      --entry-service "${ENTRY_SERVICE}" \
-      --start-us "$((REF_START_MS * 1000))" \
-      --end-us "$((REF_END_MS * 1000))" \
-      --output-json "${OUT_DIR}/utility/raw_traces/reference_traces.json" \
-      --output-meta "${OUT_DIR}/utility/raw_traces/reference_trace_meta.json" \
-      --limit 5000
-    REFERENCE_TRACE_ARGS=(--reference-run-id "${REFERENCE_RUN_ID}" --reference-traces "${OUT_DIR}/utility/raw_traces/reference_traces.json")
+    REF_WINDOW="$(cat "${OUT_DIR}/utility/reference_window.txt")"
+    REF_START_MS="${REF_WINDOW%%,*}"
+    REF_END_MS="${REF_WINDOW##*,}"
+    if [[ -n "${REF_START_MS}" && -n "${REF_END_MS}" ]]; then
+      python3 "${ROOT_DIR}/scripts/export_traces.py" \
+        --run-dir "${REFERENCE_RUN_DIR}" \
+        --jaeger-url "http://127.0.0.1:${JAEGER_LOCAL_PORT}" \
+        --entry-service "${ENTRY_SERVICE}" \
+        --start-us "$((REF_START_MS * 1000))" \
+        --end-us "$((REF_END_MS * 1000))" \
+        --output-json "${OUT_DIR}/utility/raw_traces/reference_traces.json" \
+        --output-meta "${OUT_DIR}/utility/raw_traces/reference_trace_meta.json" \
+        --limit 5000
+      REFERENCE_TRACE_ARGS=(--reference-run-id "${REFERENCE_RUN_ID}" --reference-traces "${OUT_DIR}/utility/raw_traces/reference_traces.json")
+    fi
   fi
 fi
 
@@ -865,7 +928,13 @@ fault_apply = load_doc(fault_apply_path)
 fault_clear = load_doc(fault_clear_path)
 controller = load_doc(controller_summary_path)
 
-metric_map = metrics.get("metrics", {})
+raw_metric_map = metrics.get("metrics", {})
+# Extract scalar .value from metric dicts produced by 07_collect_metrics.sh.
+def mv(key):
+    entry = raw_metric_map.get(key)
+    if isinstance(entry, dict):
+        return entry.get("value")
+    return entry
 
 doc = {
     "run_id": context.get("run_id"),
@@ -902,25 +971,25 @@ doc = {
         "latency_ms": {
             "fortio": load_summary.get("latency_ms"),
             "prometheus": {
-                "p50": metric_map.get("p50_latency_ms"),
-                "p95": metric_map.get("p95_latency_ms"),
-                "p99": metric_map.get("p99_latency_ms"),
+                "p50": mv("p50_latency_ms"),
+                "p95": mv("p95_latency_ms"),
+                "p99": mv("p99_latency_ms"),
             },
         },
         "error_rate": {
             "fortio": load_summary.get("http_error_rate"),
-            "prometheus": metric_map.get("error_rate"),
+            "prometheus": mv("error_rate"),
         },
-        "request_rate": metric_map.get("request_rate"),
+        "request_rate": mv("request_rate"),
         "sidecar_cpu": {
-            "sum_cores": metric_map.get("envoy_cpu_cores_sum"),
-            "per_pod_cores": metric_map.get("envoy_cpu_cores_per_pod"),
+            "sum_cores": mv("envoy_cpu_cores_sum"),
+            "per_pod_cores": mv("envoy_cpu_cores_per_pod"),
         },
         "trace_volume": {
-            "spans_per_sec": metric_map.get("otel_spans_per_sec"),
-            "bytes_per_sec": metric_map.get("otel_bytes_per_sec"),
-            "accepted_spans_per_sec": metric_map.get("otel_accepted_spans_per_sec"),
-            "effective_sampling_ratio": metric_map.get("effective_sampling_ratio"),
+            "spans_per_sec": mv("otel_spans_per_sec"),
+            "bytes_per_sec": mv("otel_bytes_per_sec"),
+            "accepted_spans_per_sec": mv("otel_accepted_spans_per_sec"),
+            "effective_sampling_ratio": mv("effective_sampling_ratio"),
         },
     },
     "utility_metrics": {

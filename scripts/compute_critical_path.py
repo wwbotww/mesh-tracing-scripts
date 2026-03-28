@@ -4,7 +4,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-SUPPORT_THRESHOLD = 0.2
+SUPPORT_THRESHOLD = 0.1
 MIN_TRACE_COUNT = 10
 
 

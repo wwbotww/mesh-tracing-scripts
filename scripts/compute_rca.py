@@ -96,11 +96,19 @@ def extract_edges(trace_doc):
             parent_service = span_service(trace, parent)
             if not parent_service:
                 continue
+            if parent_service == child_service:
+                continue  # Skip self-loop edges (Istio inbound/outbound spans on same service)
             edge = f"{parent_service}->{child_service}"
             duration_ms = float(child.get("duration", 0) or 0) / 1000.0
-            tags = tag_map(child)
+            # Check BOTH parent and child spans for errors. Istio VirtualService
+            # fault injection (abort) creates errors at the destination sidecar;
+            # the error tag appears on the caller's (parent) span response, not
+            # necessarily on the callee's (child) span.
+            child_tags = tag_map(child)
+            parent_tags = tag_map(parent)
+            edge_has_error = is_error_span(child_tags) or is_error_span(parent_tags)
             aggregated[edge]["count"] += 1
-            aggregated[edge]["error_count"] += 1 if is_error_span(tags) else 0
+            aggregated[edge]["error_count"] += 1 if edge_has_error else 0
             aggregated[edge]["durations_ms"].append(duration_ms)
     return traces, aggregated
 
@@ -126,10 +134,19 @@ def score_error(current_error_rate, reference_error_rate):
     return max(0.0, current_error_rate - reference_error_rate)
 
 
-def score_missing(current_count, reference_count):
+def score_missing(current_count, reference_count, trace_ratio=1.0):
+    """Score how many spans are 'missing' on this edge relative to expectation.
+
+    trace_ratio = len(current_traces) / len(reference_traces) normalises for
+    different sampling rates so that the score reflects genuinely absent spans
+    (e.g. Istio abort dropping callee spans) rather than lower sample volume.
+    """
     if reference_count < N_MIN:
         return 0.0
-    return max(0.0, (reference_count - current_count) / (reference_count + EPSILON))
+    expected = reference_count * trace_ratio
+    if expected < 5:          # too few expected observations to be meaningful
+        return 0.0
+    return max(0.0, (expected - current_count) / (expected + EPSILON))
 
 
 def write_json(path, doc):
@@ -233,14 +250,19 @@ def main():
         write_json(ranking_path, build_empty_result(run_id, args.reference_run_id, ground_truth, "insufficient_data", "no_supported_edges"))
         return
 
+    # Normalise for sampling-rate difference between current and reference runs.
+    trace_ratio = len(current_traces) / max(len(reference_traces), 1)
+
+    W_LAT, W_ERR, W_MISS = 0.5, 0.3, 0.2
+
     edge_features = []
     service_scores = defaultdict(list)
     for edge, ref in reference_stats.items():
         cur = current_stats.get(edge, {"count": 0, "error_rate": 0.0, "p95_latency_ms": 0.0})
         lat_score = score_latency(cur["p95_latency_ms"], ref["p95_latency_ms"])
         err_score = score_error(cur["error_rate"], ref["error_rate"])
-        miss_score = score_missing(cur["count"], ref["count"])
-        total_score = 0.5 * lat_score + 0.3 * err_score + 0.2 * miss_score
+        miss_score = score_missing(cur["count"], ref["count"], trace_ratio)
+        total_score = W_LAT * lat_score + W_ERR * err_score + W_MISS * miss_score
         caller, callee = edge.split("->", 1)
         feature = {
             "edge": edge,
@@ -321,10 +343,11 @@ def main():
         "constants": {
             "epsilon": EPSILON,
             "n_min": N_MIN,
+            "trace_ratio": trace_ratio,
             "score_weights": {
-                "latency": 0.5,
-                "error": 0.3,
-                "missing": 0.2,
+                "latency": W_LAT,
+                "error": W_ERR,
+                "missing": W_MISS,
             },
         },
         "edges": edge_ranking,

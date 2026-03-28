@@ -77,11 +77,13 @@ apply_generated_policy() {
   local generated_policy="$1"
   local generated_budget="$2"
   local percentage="100"
-  case "${generated_budget}" in
-    low) percentage="50" ;;
-    mid) percentage="75" ;;
-    high) percentage="100" ;;
-  esac
+  if [[ "${generated_policy}" != "reference" ]]; then
+    case "${generated_budget}" in
+      low) percentage="50" ;;
+      mid) percentage="75" ;;
+      high) percentage="100" ;;
+    esac
+  fi
 
   if [[ "${generated_policy}" == "reference" ]]; then
     kubectl apply -n "${NAMESPACE}" -f - <<EOF
@@ -280,8 +282,28 @@ spec:
 EOF
 
 log "Rolling restart collector deployment..."
-kubectl -n "${NAMESPACE}" rollout restart deployment/"${COLLECTOR_DEPLOY}" || err "Failed to restart ${COLLECTOR_DEPLOY}"
-kubectl -n "${NAMESPACE}" rollout status deployment/"${COLLECTOR_DEPLOY}" --timeout=240s || err "Collector rollout not ready"
+# Retry rollout restart up to 4 times to handle transient API-server blips.
+_rollout_ok=false
+for _attempt in 1 2 3 4; do
+  if kubectl -n "${NAMESPACE}" rollout restart deployment/"${COLLECTOR_DEPLOY}" 2>/dev/null; then
+    _rollout_ok=true
+    break
+  fi
+  warn "rollout restart failed (attempt ${_attempt}/4), retrying in 10s..."
+  sleep 10
+done
+${_rollout_ok} || err "Failed to restart ${COLLECTOR_DEPLOY} after retries"
+# Wait for rollout with retry (API server may blip during rollout status polling).
+_status_ok=false
+for _attempt in 1 2 3; do
+  if kubectl -n "${NAMESPACE}" rollout status deployment/"${COLLECTOR_DEPLOY}" --timeout=120s 2>/dev/null; then
+    _status_ok=true
+    break
+  fi
+  warn "rollout status check failed (attempt ${_attempt}/3), retrying in 10s..."
+  sleep 10
+done
+${_status_ok} || err "Collector rollout not ready after retries"
 
 log "Current effective config summary (${CM_NAME}.data.config.yaml):"
 kubectl get configmap "${CM_NAME}" -n "${NAMESPACE}" -o go-template='{{index .data "config.yaml"}}' \

@@ -94,7 +94,11 @@ PY
 }
 
 log "Checking minikube status..."
-minikube status || err "minikube is not reachable or not running."
+# minikube status can fail with transient SSH errors even when the cluster is healthy.
+# Use kubectl connectivity as the authoritative reachability check; minikube status is advisory.
+if ! minikube status >/dev/null 2>&1; then
+  warn "minikube status returned non-zero (possible transient SSH error); falling back to kubectl connectivity check."
+fi
 
 log "Checking kubectl connectivity..."
 kubectl cluster-info >/dev/null 2>&1 || err "kubectl cannot reach the cluster."

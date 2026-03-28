@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import math
 import signal
 import subprocess
 import sys
@@ -38,9 +39,9 @@ PROFILE_BY_LEVEL = {
 }
 
 THRESHOLDS = {
-    "error_rate": {"medium": 0.01, "high": 0.05},
-    "p95_ratio": {"medium": 1.30, "high": 1.80},
-    "request_surge_ratio": {"medium": 1.20, "high": 1.50},
+    "error_rate": {"medium": 0.01, "high": 0.03},
+    "p95_ratio": {"medium": 1.50, "high": 2.50},
+    "request_surge_ratio": {"medium": 2.00, "high": 3.00},
 }
 
 STOP = False
@@ -75,6 +76,16 @@ def mean(values):
     return sum(values) / len(values)
 
 
+def median(values):
+    if not values:
+        return None
+    s = sorted(values)
+    n = len(s)
+    if n % 2 == 1:
+        return s[n // 2]
+    return (s[n // 2 - 1] + s[n // 2]) / 2
+
+
 def safe_ratio(current, baseline):
     if current is None or baseline in (None, 0):
         return None
@@ -106,14 +117,22 @@ def query_scalar(prometheus_url, query):
 
 
 def build_queries(app_namespace, window_seconds):
+    # Use max-per-service metrics instead of mesh-wide aggregates.
+    # This prevents signal dilution: a fault on one service (e.g. 400ms delay
+    # on productcatalogservice) is clearly visible as a per-service p95 spike,
+    # whereas mesh-wide p95 barely moves because other healthy services dominate.
     return {
         "p95_latency_ms": (
+            "max("
             "histogram_quantile(0.95, "
-            f"sum(rate(istio_request_duration_milliseconds_bucket{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\"}}[{window_seconds}s])) by (le))"
+            f"sum by (le, destination_workload)(rate(istio_request_duration_milliseconds_bucket{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\"}}[{window_seconds}s])))"
+            ")"
         ),
         "error_rate": (
-            f"sum(rate(istio_requests_total{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\",response_code=~\"5..\"}}[{window_seconds}s])) "
-            f"/ clamp_min(sum(rate(istio_requests_total{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\"}}[{window_seconds}s])), 0.0001)"
+            "max("
+            f"sum by (destination_workload)(rate(istio_requests_total{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\",response_code=~\"5..\"}}[{window_seconds}s])) "
+            f"/ clamp_min(sum by (destination_workload)(rate(istio_requests_total{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\"}}[{window_seconds}s])), 0.0001)"
+            ")"
         ),
         "request_rate": (
             f"sum(rate(istio_requests_total{{reporter=\"destination\",destination_workload_namespace=\"{app_namespace}\"}}[{window_seconds}s]))"
@@ -131,11 +150,21 @@ def collect_metrics(prometheus_url, queries):
     return values, raw_docs
 
 
+def _finite(v):
+    return v is not None and not (isinstance(v, float) and (math.isnan(v) or math.isinf(v)))
+
+
 def compute_baselines(warmup_samples, current_metrics):
-    p95_values = [item["p95_latency_ms"] for item in warmup_samples if item.get("p95_latency_ms") is not None]
-    request_values = [item["request_rate"] for item in warmup_samples if item.get("request_rate") is not None]
-    baseline_p95 = mean(p95_values) or current_metrics.get("p95_latency_ms")
-    baseline_request_rate = mean(request_values) or current_metrics.get("request_rate")
+    p95_values = [item["p95_latency_ms"] for item in warmup_samples if _finite(item.get("p95_latency_ms"))]
+    request_values = [item["request_rate"] for item in warmup_samples if _finite(item.get("request_rate"))]
+    # Use MEDIAN instead of MEAN: robust to 1-2 outlier samples from OTel collector
+    # restart recovery period that inflate p95 during early warmup.
+    baseline_p95 = median(p95_values) if p95_values else None
+    baseline_request_rate = median(request_values) if request_values else None
+    if not _finite(baseline_p95):
+        baseline_p95 = current_metrics.get("p95_latency_ms") if _finite(current_metrics.get("p95_latency_ms")) else None
+    if not _finite(baseline_request_rate):
+        baseline_request_rate = current_metrics.get("request_rate") if _finite(current_metrics.get("request_rate")) else None
     return baseline_p95, baseline_request_rate
 
 
@@ -308,6 +337,7 @@ def main():
     restart_count = 0
     iteration = 0
     last_event = None
+    cooldown_until_iteration = 0  # skip classification for 1 poll after profile change
 
     summary = {
         "enabled": True,
@@ -400,6 +430,13 @@ def main():
                 event["action"] = "metrics_missing"
                 event["level"] = current_level
                 event["profile"] = current_profile
+            elif iteration <= cooldown_until_iteration:
+                # Skip classification during cooldown after profile change.
+                # OTel collector restart takes ~30-60s; metrics during this
+                # window are noisy and can cause false triggers.
+                event["action"] = "cooldown_after_restart"
+                event["level"] = current_level
+                event["profile"] = current_profile
             else:
                 classification = classify_state(metrics, baseline_p95, baseline_request_rate)
                 current_level = classification["level"]
@@ -427,6 +464,9 @@ def main():
                         event["action"] = "profile_changed"
                         event["profile"] = current_profile
                         event["config_snapshot"] = str(snapshot_path)
+                        # Cooldown: skip next poll's classification to let
+                        # OTel collector stabilize after restart.
+                        cooldown_until_iteration = iteration + 1
                     except subprocess.CalledProcessError as exc:
                         event["action"] = "profile_change_failed"
                         event["error"] = exc.stderr or exc.stdout or str(exc)

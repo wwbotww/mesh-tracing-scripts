@@ -120,7 +120,17 @@ Path(sys.argv[1]).write_text(
 PY
 }
 
-kubectl get svc "${TARGET_SERVICE}" -n "${NAMESPACE}" >/dev/null 2>&1 || err "Target service not found: ${TARGET_SERVICE} in ns=${NAMESPACE}"
+# Retry kubectl checks to tolerate transient API-server blips.
+_svc_found=false
+for _attempt in 1 2 3 4 5 6; do
+  if kubectl get svc "${TARGET_SERVICE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+    _svc_found=true
+    break
+  fi
+  warn "Target service ${TARGET_SERVICE} not reachable (attempt ${_attempt}/6), retrying in 8s..."
+  sleep 8
+done
+${_svc_found} || err "Target service not found: ${TARGET_SERVICE} in ns=${NAMESPACE}"
 
 if [[ -n "${SOURCE_SERVICE}" ]]; then
   kubectl get deploy "${SOURCE_SERVICE}" -n "${NAMESPACE}" >/dev/null 2>&1 || warn "Source deploy ${SOURCE_SERVICE} not found; fault will still apply by sourceLabels matching app=${SOURCE_SERVICE}"
@@ -289,13 +299,28 @@ EOF
     render_template "${template_file}" "${tmp_render}"
     if [[ -n "${RENDERED_FILE}" ]]; then
       cp "${tmp_render}" "${RENDERED_FILE}"
-      kubectl apply -n "${NAMESPACE}" -f "${RENDERED_FILE}" || err "Failed to apply fault manifest"
+      _apply_ok=false
+      for _a in 1 2 3; do
+        if kubectl apply -n "${NAMESPACE}" -f "${RENDERED_FILE}" 2>/dev/null; then _apply_ok=true; break; fi
+        warn "kubectl apply fault failed (attempt ${_a}/3), retrying in 8s..."; sleep 8
+      done
+      ${_apply_ok} || err "Failed to apply fault manifest"
     else
-      kubectl apply -n "${NAMESPACE}" -f "${tmp_render}" || err "Failed to apply fault manifest"
+      _apply_ok=false
+      for _a in 1 2 3; do
+        if kubectl apply -n "${NAMESPACE}" -f "${tmp_render}" 2>/dev/null; then _apply_ok=true; break; fi
+        warn "kubectl apply fault failed (attempt ${_a}/3), retrying in 8s..."; sleep 8
+      done
+      ${_apply_ok} || err "Failed to apply fault manifest"
     fi
     rm -f "${tmp_render}"
   fi
-  kubectl get virtualservice "${FAULT_NAME}" -n "${NAMESPACE}" || err "Fault VirtualService not found after apply"
+  _vs_ok=false
+  for _a in 1 2 3; do
+    if kubectl get virtualservice "${FAULT_NAME}" -n "${NAMESPACE}" >/dev/null 2>&1; then _vs_ok=true; break; fi
+    warn "VirtualService check failed (attempt ${_a}/3), retrying in 5s..."; sleep 5
+  done
+  ${_vs_ok} || err "Fault VirtualService not found after apply"
 else
   kubectl delete virtualservice "${FAULT_NAME}" -n "${NAMESPACE}" --ignore-not-found
 fi

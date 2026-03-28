@@ -1,11 +1,18 @@
 {
-  "app": "bookinfo",
-  "policies": ["reference", "no_tracing", "head", "tail", "my_policy"],
-  "budgets": ["low", "medium", "high"],
+  "app": "onlineboutique",
+  "policies": [
+    "reference",
+    "head",
+    "tail",
+    "my_policy"
+  ],
+  "budgets": [
+    "low",
+    "medium",
+    "high"
+  ],
   "load_levels": {
-    "low": 50,
-    "medium": 200,
-    "high": 500
+    "mid": 20
   },
   "faults": [
     {
@@ -14,24 +21,28 @@
     {
       "type": "delay",
       "target_type": "service",
-      "targets": ["service=reviews"],
-      "fixed_delay_ms": 500,
+      "targets": [
+        "service=productcatalogservice"
+      ],
+      "fixed_delay_ms": 400,
       "percentage": 50
     },
     {
       "type": "abort",
       "target_type": "service",
-      "targets": ["service=reviews"],
+      "targets": [
+        "service=productcatalogservice"
+      ],
       "http_status": 500,
       "percentage": 20
     }
   ],
-  "duration_seconds": 120,
+  "duration_seconds": 300,
   "repeats": 1,
   "namespaces": {
     "app": "mesh-app",
     "observability": "observability",
     "istio": "istio-system"
   },
-  "notes": "MVP matrix spec with utility placeholders and structured result output."
+  "notes": "MVP utility-cost matrix: onlineboutique homepage-only, 4 policies x 3 budgets x 3 faults. delay=400ms chosen to fall below tail_low threshold(500ms) but above aggressive threshold(200ms)."
 }
