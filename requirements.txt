@@ -1,0 +1,3 @@
+# Python dependencies for analysis and visualization scripts
+matplotlib>=3.7
+numpy>=1.24

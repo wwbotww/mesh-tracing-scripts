@@ -24,7 +24,7 @@
       "targets": [
         "service=productcatalogservice"
       ],
-      "fixed_delay_ms": 400,
+      "fixed_delay_ms": 250,
       "percentage": 50
     },
     {
@@ -44,5 +44,5 @@
     "observability": "observability",
     "istio": "istio-system"
   },
-  "notes": "MVP utility-cost matrix: onlineboutique homepage-only, 4 policies x 3 budgets x 3 faults. delay=400ms chosen to fall below tail_low threshold(500ms) but above aggressive threshold(200ms)."
+  "notes": "MVP utility-cost matrix: onlineboutique homepage-only, 4 policies x 3 budgets x 3 faults. delay=250ms/50% chosen so trace-level p95 (~470ms) stays below tail_low threshold (500ms) while exceeding tail_mid (300ms) and tail_high (200ms); controller detects via p95_ratio ~2.0 > medium threshold 1.5."
 }

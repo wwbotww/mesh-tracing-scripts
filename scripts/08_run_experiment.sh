@@ -554,6 +554,7 @@ doc = {
     "ranking": [],
     "top1_hit": None,
     "top3_hit": None,
+    "top5_hit": None,
     "status": "placeholder",
     "reason": "rca_algorithm_not_implemented",
 }
@@ -677,6 +678,18 @@ ensure_app
 disable_loadgenerator_if_present
 ensure_observability
 
+# Remove any leftover fault VirtualServices from previous runs to ensure a
+# clean initial state.  The label selector is set by 05_inject_fault.sh.
+log "Cleaning up leftover fault VirtualServices..."
+kubectl delete virtualservice -n "${APP_NS}" -l app.kubernetes.io/managed-by=trace-exp --ignore-not-found || true
+
+# Wait for Envoy sidecars to reconcile after fault VirtualService removal.
+# Istio config propagation to sidecars can take 10-30s; without this sleep
+# the warmup phase may observe stale fault effects (error responses, elevated
+# latency) that corrupt the controller's baseline.
+log "Waiting 45s for sidecar config propagation after fault cleanup..."
+sleep 45
+
 parse_target
 
 if [[ -z "${TARGET_URL}" ]]; then
@@ -684,11 +697,43 @@ if [[ -z "${TARGET_URL}" ]]; then
 fi
 [[ -n "${TARGET_URL}" ]] || err "Unable to resolve load target URL, please pass --target_url"
 
+# Verify the app is healthy (no residual fault effects) before proceeding.
+# Send 10 quick requests; if any return 5xx, wait and retry once.
+_verify_health() {
+  local url="$1" ok=0 fail=0
+  for _ in $(seq 1 10); do
+    local code
+    code="$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "${url}" 2>/dev/null || echo "000")"
+    if [[ "${code}" =~ ^[23] ]]; then ok=$((ok+1)); else fail=$((fail+1)); fi
+  done
+  echo "${ok}/${fail}"
+  [[ ${fail} -eq 0 ]]
+}
+log "Verifying app health before experiment (${TARGET_URL})..."
+if ! _verify_health "${TARGET_URL}"; then
+  warn "App returned errors; waiting 30s for fault effects to fully dissipate..."
+  sleep 30
+  if ! _verify_health "${TARGET_URL}"; then
+    warn "App still returning errors after extra wait; proceeding anyway"
+  else
+    log "App health verified after extra wait"
+  fi
+else
+  log "App health verified: no errors"
+fi
+
 resolve_output_dir
 write_run_context
 write_utility_placeholders
 
 bash "${ROOT_DIR}/scripts/04_apply_sampling_policy.sh" --policy "${CANONICAL_POLICY}" --budget "${CANONICAL_BUDGET}" --namespace "${OBS_NS}" --app "${APP}" --app-namespace "${APP_NS}"
+
+# Let the collector fully stabilize after rollout restart before starting
+# load.  This avoids transient metric spikes (queue backlog, stale
+# Prometheus scrape windows) that can pollute the controller's warmup
+# baseline and cause false escalations (observed in Run #028, #031).
+log "Waiting 30s for collector metrics to stabilize after restart..."
+sleep 30
 
 WARMUP_SEC=120
 FAULT_PHASE_SEC=$(( DURATION * 60 / 100 ))

@@ -181,8 +181,22 @@ def extract_ground_truth(context):
     }
 
 
+def is_target_in_top_k(ranked_names, target, k):
+    """Check whether *target* appears within the first *k* entries of *ranked_names*.
+
+    Returns None if *target* is None/empty (no ground truth available),
+    otherwise True/False.
+    """
+    if not target:
+        return None
+    return target in ranked_names[:k]
+
+
+TOP_K_VALUES = (1, 3, 5)
+
+
 def build_empty_result(run_id, reference_run_id, ground_truth, status, reason):
-    return {
+    result = {
         "run_id": run_id,
         "reference_run_id": reference_run_id,
         "ground_truth": ground_truth,
@@ -191,11 +205,14 @@ def build_empty_result(run_id, reference_run_id, ground_truth, status, reason):
         "service_ranking": [],
         "edge_top1_hit": None,
         "edge_top3_hit": None,
+        "edge_top5_hit": None,
         "service_top1_hit": None,
         "service_top3_hit": None,
+        "service_top5_hit": None,
         "status": status,
         "reason": reason,
     }
+    return result
 
 
 def main():
@@ -316,20 +333,17 @@ def main():
     ground_truth_service = ground_truth.get("service")
     target_type = ground_truth.get("target_type")
 
-    edge_top1_hit = None
-    edge_top3_hit = None
-    service_top1_hit = None
-    service_top3_hit = None
+    # Compute top-k hits for all configured k values using the shared helper.
+    edge_topk = {k: None for k in TOP_K_VALUES}
+    service_topk = {k: None for k in TOP_K_VALUES}
 
     if target_type == "edge" and ground_truth_edge:
-        edge_top1_hit = edge_names[:1] == [ground_truth_edge]
-        edge_top3_hit = ground_truth_edge in edge_names[:3]
-        if ground_truth_service:
-            service_top1_hit = service_names[:1] == [ground_truth_service]
-            service_top3_hit = ground_truth_service in service_names[:3]
+        for k in TOP_K_VALUES:
+            edge_topk[k] = is_target_in_top_k(edge_names, ground_truth_edge, k)
+            service_topk[k] = is_target_in_top_k(service_names, ground_truth_service, k)
     elif target_type == "service" and ground_truth_service:
-        service_top1_hit = service_names[:1] == [ground_truth_service]
-        service_top3_hit = ground_truth_service in service_names[:3]
+        for k in TOP_K_VALUES:
+            service_topk[k] = is_target_in_top_k(service_names, ground_truth_service, k)
 
     features_doc = {
         "run_id": run_id,
@@ -360,10 +374,12 @@ def main():
         "scoring_method": "S_edge=0.5*S_lat+0.3*S_err+0.2*S_miss",
         "edge_ranking": edge_ranking,
         "service_ranking": service_ranking,
-        "edge_top1_hit": edge_top1_hit,
-        "edge_top3_hit": edge_top3_hit,
-        "service_top1_hit": service_top1_hit,
-        "service_top3_hit": service_top3_hit,
+        "edge_top1_hit": edge_topk[1],
+        "edge_top3_hit": edge_topk[3],
+        "edge_top5_hit": edge_topk[5],
+        "service_top1_hit": service_topk[1],
+        "service_top3_hit": service_topk[3],
+        "service_top5_hit": service_topk[5],
         "status": "ok",
         "reason": None,
     }

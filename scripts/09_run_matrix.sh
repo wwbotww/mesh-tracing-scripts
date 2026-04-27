@@ -294,16 +294,70 @@ with Path(run_log_path).open("a", encoding="utf-8") as fh:
 PY
 done < "${MATRIX_DIR}/expanded_runs.jsonl"
 
-python3 - <<'PY' "${SUMMARY_JSON}" "${SPEC_PATH}" "${RUN_LOG}" "${SUCCESS_COUNT}" "${FAIL_COUNT}" "${MATRIX_ID}"
+python3 - <<'PY' "${SUMMARY_JSON}" "${SPEC_PATH}" "${RUN_LOG}" "${SUCCESS_COUNT}" "${FAIL_COUNT}" "${MATRIX_ID}" "${RESULTS_DIR}/runs"
 import json
 import sys
+from collections import defaultdict
 from pathlib import Path
 
-summary_path, spec_path, run_log_path, success_count, fail_count, matrix_id = sys.argv[1:7]
+summary_path, spec_path, run_log_path, success_count, fail_count, matrix_id, runs_root = sys.argv[1:8]
 runs = []
 run_log = Path(run_log_path)
 if run_log.exists():
     runs = [json.loads(line) for line in run_log.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+# Aggregate RCA Top-k hit rates by policy (and by policy x fault_type).
+TOP_K_VALUES = [1, 3, 5]
+
+def load_rca_topk(run_id):
+    rca_path = Path(runs_root) / run_id / "utility" / "rca_ranking.json"
+    if not rca_path.exists():
+        return None
+    try:
+        return json.loads(rca_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+# Counters: policy -> {topk_key -> {hits, total}}
+by_policy = defaultdict(lambda: {f"top{k}": {"hits": 0, "total": 0} for k in TOP_K_VALUES})
+by_policy_fault = defaultdict(lambda: {f"top{k}": {"hits": 0, "total": 0} for k in TOP_K_VALUES})
+
+for run in runs:
+    run_id = run.get("run_id", "")
+    policy = run.get("policy", "")
+    fault_type = run.get("fault_type", "none")
+
+    if policy == "reference" or fault_type == "none" or run.get("status") != "success":
+        continue
+
+    rca = load_rca_topk(run_id)
+    if not rca or rca.get("status") != "ok":
+        continue
+
+    for k in TOP_K_VALUES:
+        field = f"service_top{k}_hit"
+        val = rca.get(field)
+        if val is None:
+            continue
+        by_policy[policy][f"top{k}"]["total"] += 1
+        by_policy[policy][f"top{k}"]["hits"] += 1 if val else 0
+        pf_key = f"{policy}/{fault_type}"
+        by_policy_fault[pf_key][f"top{k}"]["total"] += 1
+        by_policy_fault[pf_key][f"top{k}"]["hits"] += 1 if val else 0
+
+def build_agg(counters):
+    result = {}
+    for key, topk_map in sorted(counters.items()):
+        entry = {}
+        for tk, counts in topk_map.items():
+            total = counts["total"]
+            entry[tk] = {
+                "hits": counts["hits"],
+                "total": total,
+                "rate": round(counts["hits"] / total, 4) if total > 0 else None,
+            }
+        result[key] = entry
+    return result
 
 doc = {
     "matrix_id": matrix_id,
@@ -311,6 +365,10 @@ doc = {
     "success_count": int(success_count),
     "fail_count": int(fail_count),
     "runs_file": run_log_path,
+    "rca_aggregate": {
+        "by_policy": build_agg(by_policy),
+        "by_policy_fault": build_agg(by_policy_fault),
+    },
     "runs": runs,
 }
 Path(summary_path).write_text(json.dumps(doc, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
