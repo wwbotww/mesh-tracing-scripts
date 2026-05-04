@@ -4,8 +4,8 @@ Pareto Analysis / Frontier Visualization for Mesh Tracing Sampling Experiments.
 
 Generates four figures, each conveying one clear conclusion:
 
-  1. rca_tradeoff_delay   — Adaptive sampling matches head's RCA under delay faults
-  2. rca_tradeoff_abort   — Adaptive sampling Pareto-dominates tail under abort faults
+  1. rca_tradeoff_delay   — Adaptive sampling Pareto-dominates tail at mid/high budgets
+  2. rca_tradeoff_abort   — Mixed cost-utility trade-off under abort faults (tail/low optimal)
   3. top3_hit_heatmap     — RCA Top-3 hit/miss across all (policy, budget, fault) combos
   4. top5_hit_heatmap     — RCA Top-5 hit/miss across all (policy, budget, fault) combos
   5. critical_path_nofault — All strategies preserve critical-path fidelity at vastly
@@ -216,11 +216,13 @@ def plot_rca_tradeoff(records: list[dict], fault_type: str,
     fault_desc = {"delay": "delay (250 ms / 50%)",
                   "abort": "abort (HTTP 500 / 20%)"}
     titles = {
-        "delay": "Adaptive sampling matches head under delay faults",
-        "abort": "Adaptive sampling Pareto-dominates tail under abort faults",
+        "delay": "Adaptive sampling Pareto-dominates tail at mid/high budgets",
+        "abort": "Mixed cost-utility trade-off under abort faults",
     }
-    ax.set_title(titles.get(fault_type, fault_type), fontsize=13, fontweight="bold",
-                 pad=12)
+    ax.set_title(
+        f"{titles.get(fault_type, fault_type)}\nFault: {fault_desc.get(fault_type, fault_type)}",
+        fontsize=13, fontweight="bold", pad=10,
+    )
 
     # Collect (cost, utility) for Pareto computation
     pts: list[tuple[float, float]] = []
@@ -249,11 +251,6 @@ def plot_rca_tradeoff(records: list[dict], fault_type: str,
                   fontsize=11)
     ax.set_xlim(left=0)
     ax.grid(True, alpha=0.25, linewidth=0.5)
-
-    # Subtitle with fault description
-    ax.text(0.5, 1.01, f"Fault: {fault_desc.get(fault_type, fault_type)}",
-            transform=ax.transAxes, fontsize=10, ha="center", va="bottom",
-            color="dimgrey")
 
     handles = _policy_handles() + _budget_handles() + [_pareto_handle()]
     ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1),
